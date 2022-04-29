@@ -34,16 +34,16 @@
         </surface>
       </collision>
       <visual name='base_link_inertia_visual'>
-        <pose frame=''>0 0 0 0 -0 0</pose>
+        <pose frame=''>-0.185 0.185 0.375 0 -0 0</pose>
         <geometry>
           <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://iris/meshes/iris.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>model://omnicopter/meshes/omnicopter.stl</uri>
           </mesh>
         </geometry>
         <material>
           <script>
-            <name>Gazebo/DarkGrey</name>
+            <name>Gazebo/Orange</name>
             <uri>file://media/materials/scripts/gazebo.material</uri>
           </script>
         </material>
