@@ -577,5 +577,10 @@
       <accelerometerBiasCorrelationTime>300.0</accelerometerBiasCorrelationTime>
       <accelerometerTurnOnBiasSigma>0.196</accelerometerTurnOnBiasSigma>
     </plugin>
+    <plugin name='gazebo_ros_imu' filename='libgazebo_ros_imu.so'>
+      <robotNamespace/>
+      <bodyName>/imu_link</bodyName>
+      <topicName>/imu</topicName>
+    </plugin>
   </model>
 </sdf>
