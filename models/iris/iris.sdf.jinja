@@ -719,5 +719,10 @@
       <child>/alt_link</child>
       <parent>base_link</parent>
     </joint>
+    <plugin name='gazebo_ros_p3d' filename='libgazebo_ros_p3d.so'>
+      <robotNamespace></robotNamespace>
+      <bodyName>base_link</bodyName>
+      <topicName>/gazebo_ros_groundtruth</topicName>
+    </plugin>
   </model>
 </sdf>
