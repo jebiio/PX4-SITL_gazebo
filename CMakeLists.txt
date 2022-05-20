@@ -375,6 +375,7 @@ add_library(gazebo_airship_dynamics_plugin SHARED src/gazebo_airship_dynamics_pl
 add_library(gazebo_drop_plugin SHARED src/gazebo_drop_plugin.cpp)
 add_library(gazebo_ros_imu SHARED src/gazebo_ros_imu.cpp)
 add_library(gazebo_ros_range SHARED src/gazebo_ros_range.cpp)
+add_library(gazebo_ros_p3d SHARED src/gazebo_ros_p3d.cpp)
 
 set(plugins
   gazebo_airspeed_plugin
@@ -404,6 +405,7 @@ set(plugins
   gazebo_drop_plugin
   gazebo_ros_imu
   gazebo_ros_range
+  gazebo_ros_p3d
   )
 
 foreach(plugin ${plugins})
