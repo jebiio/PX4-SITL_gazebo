@@ -210,7 +210,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='rotor_1_visual'>
+      <!-- <visual name='rotor_1_visual'>
         <pose>0.299636 -0.530907 0.125000 -1.570700 0 0</pose>
         <geometry>
           <mesh>
@@ -224,7 +224,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual> -->
       <gravity>1</gravity>
       <velocity_decay/>
       <self_collide>0</self_collide>
