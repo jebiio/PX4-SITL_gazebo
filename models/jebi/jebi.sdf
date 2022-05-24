@@ -113,6 +113,146 @@
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
+    <link name='fake_rotor_0'>
+      <pose>0.000468 0.230774 0.530968 1.570700 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.010</mass>
+        <inertia>
+          <ixx>0.00000002</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00000002</iyy>
+          <iyz>0</iyz>
+          <izz>0.00000002</izz>
+        </inertia>
+      </inertial>
+      <collision name='fake_rotor_0_col'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.01 0.01 0.01</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <max_vel>10</max_vel>
+              <min_depth>0.01</min_depth>
+            </ode>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='fake_rotor_0_vis'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://jebi/meshes/link1.STL</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Blue</name>
+            <uri>__default__</uri>
+          </script>
+        </material>
+      </visual>
+      <gravity>0</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+    </link>
+    <joint name='fake_rotor_0_joint' type='revolute'>
+      <child>fake_rotor_0</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>0</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='fake_rotor_1'>
+      <pose>0.000468 -0.230642 0.530968 -1.570700 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.010</mass>
+        <inertia>
+          <ixx>0.00000002</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00000002</iyy>
+          <iyz>0</iyz>
+          <izz>0.00000002</izz>
+        </inertia>
+      </inertial>
+      <collision name='fake_rotor_1_col'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.01 0.01 0.01</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <max_vel>10</max_vel>
+              <min_depth>0.01</min_depth>
+            </ode>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='fake_rotor_1_vis'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://jebi/meshes/link2.STL</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Blue</name>
+            <uri>__default__</uri>
+          </script>
+        </material>
+      </visual>
+      <gravity>0</gravity>
+      <velocity_decay/>
+      <self_collide>0</self_collide>
+    </link>
+    <joint name='fake_rotor_1_joint' type='revolute'>
+      <child>fake_rotor_1</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>0</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
     <link name='rotor_0'>
       <pose>0.3 -0.3 0.4 0 0 0</pose>
       <inertial>
@@ -730,6 +870,14 @@
       <right_elevon_joint>
         right_elevon_joint
       </right_elevon_joint>
+    </plugin>
+    <plugin name='gazebo_jebisim_rotor0' filename='libgazebo_jebisim_rotor.so'>
+      <linkName>rotor_0</linkName>
+      <applyLinkName>fake_rotor_0</applyLinkName>
+    </plugin>
+    <plugin name='gazebo_jebisim_rotor1' filename='libgazebo_jebisim_rotor.so'>
+      <linkName>rotor_1</linkName>
+      <applyLinkName>fake_rotor_1</applyLinkName>
     </plugin>
     <static>0</static>
   </model>
