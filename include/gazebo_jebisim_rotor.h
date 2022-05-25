@@ -4,6 +4,7 @@
 #include <ignition/math/Vector3.hh>
 #include <ignition/math.hh>
 #include <stdio.h>
+#include <ignition/math/Quaternion.hh>
 
 namespace gazebo {
 
@@ -25,6 +26,8 @@ class GazeboJebiSimRotor : public ModelPlugin {
 	physics::LinkPtr applyLink_;
 
 	physics::ModelPtr model_;
+
+	ignition::math::Pose3d T_W_I;
 
 	event::ConnectionPtr updateConnection_;
 
