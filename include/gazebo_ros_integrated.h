@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Open Source Robotics Foundation
+ * Copyright (C) 2012-2015 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,123 +14,78 @@
  * limitations under the License.
  *
 */
-#ifndef GAZEBO_ROS_INTEGRATED_HH
-#define GAZEBO_ROS_INTEGRATED_HH
+#ifndef _GAZEBO_OPTICAL_FLOW_PLUGIN_HH_
+#define _GAZEBO_OPTICAL_FLOW_PLUGIN_HH_
 
 #include <string>
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/bind.hpp>
 
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
-#include <ros/advertise_options.h>
-#include <sensor_msgs/Imu.h>
-#include <std_srvs/Empty.h>
+#include "gazebo/common/Plugin.hh"
+#include "gazebo/sensors/ImuSensor.hh"
+#include "gazebo/sensors/CameraSensor.hh"
+#include "gazebo/gazebo.hh"
+#include "gazebo/common/common.hh"
+#include "gazebo/rendering/Camera.hh"
+#include "gazebo/util/system.hh"
+#include "gazebo/transport/transport.hh"
+#include "gazebo/msgs/msgs.hh"
+#include "gazebo/physics/physics.hh"
 
-#include <gazebo/physics/physics.hh>
-#include <gazebo/transport/transport.hh>
-#include <gazebo/common/common.hh>
+#include "OpticalFlow.pb.h"
 
-#include <gazebo_plugins/PubQueue.h>
-#include "kari_integrated.h"
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <ignition/math.hh>
+
+#include "flow_opencv.hpp"
+#include "flow_px4.hpp"
+
+#define DEFAULT_RATE 20
+#define HAS_GYRO true
+
+using namespace cv;
+using namespace std;
 
 namespace gazebo
 {
-  class GazeboRosIntegrated : public ModelPlugin
+  static const std::string kDefaultGyroTopic = "/px4flow/imu";
+
+  class GAZEBO_VISIBLE IntegratedPlugin : public SensorPlugin
   {
-    /// \brief Constructor
-    public: GazeboRosIntegrated();
-
-    /// \brief Destructor
-    public: virtual ~GazeboRosIntegrated();
-
-    /// \brief Load the controller
-    /// \param node XML config node
-    public: void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
-
-    /// \brief Update the controller
-    protected: virtual void UpdateChild();
-
-    /// \brief The parent World
-    private: physics::WorldPtr world_;
-
-    /// \brief The link referred to by this plugin
-    private: physics::LinkPtr link;
-
-    /// \brief pointer to ros node
-    private: ros::NodeHandle* rosnode_;
-    private: ros::Publisher pub_;
-    private: PubQueue<kari_estimator::kari_integrated>::Ptr pub_Queue;
-
-    /// \brief ros message
-    private: kari_estimator::kari_integrated integrated_msg_;
-
-    /// \brief store link name
-    private: std::string link_name_;
-
-    /// \brief store frame name
-    private: std::string frame_name_;
-
-    /// \brief topic name
-    private: std::string topic_name_;
-
-    /// \brief allow specifying constant xyz and rpy offsets
-    private: ignition::math::Pose3d offset_;
-
-    /// \brief A mutex to lock access to fields
-    /// that are used in message callbacks
-    private: boost::mutex lock_;
-
-    /// \brief save last_time
-    private: common::Time last_time_;
-    private: ignition::math::Vector3d last_vpos_;
-    private: ignition::math::Vector3d last_veul_;
-    private: ignition::math::Vector3d apos_;
-    private: ignition::math::Vector3d aeul_;
-
-    // rate control
-    private: double update_rate_;
-
-    /// \brief: keep initial pose to offset orientation in imu message
-    private: ignition::math::Pose3d initial_pose_;
-
-    /// \brief Gaussian noise
-    private: double gaussian_noise_;
-
-    /// \brief Gaussian noise generator
-    private: double GaussianKernel(double mu, double sigma);
-
-    /// \brief for setting ROS name space
-    private: std::string robot_namespace_;
-
-    /// \brief call back when using service
-    private: bool ServiceCallback(std_srvs::Empty::Request &req,
-                                  std_srvs::Empty::Response &res);
-
-    private: ros::ServiceServer srv_;
-    private: std::string service_name_;
-
-    private: ros::CallbackQueue imu_queue_;
-    private: void IMUQueueThread();
-    private: boost::thread callback_queue_thread_;
-
-    // Pointer to the update event connection
-    private: event::ConnectionPtr update_connection_;
-
-    // deferred load in case ros is blocking
-    private: sdf::ElementPtr sdf;
-    private: void LoadThread();
-    private: boost::thread deferred_load_thread_;
-
-    // ros publish multi queue, prevents publish() blocking
-    private: PubMultiQueue pmq;
-
     public:
-      void updateIMU(kari_estimator::kari_integrated& msg);
-      void updateAltimeter(kari_estimator::kari_integrated& msg);
-      void updateOpticalflow(kari_estimator::kari_integrated& msg);
+      IntegratedPlugin();
+      virtual ~IntegratedPlugin();
+      virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
+      virtual void OnNewFrame(const unsigned char *_image,
+                              unsigned int _width, unsigned int _height,
+                              unsigned int _depth, const std::string &_format);
+      void ImuCallback(ConstIMUPtr& _imu);
 
+    protected:
+      unsigned int width, height, depth;
+      std::string format;
+      sensors::CameraSensorPtr parentSensor;
+      rendering::CameraPtr camera;
+      physics::WorldPtr world;
+
+    private:
+      event::ConnectionPtr newFrameConnection;
+      transport::PublisherPtr opticalFlow_pub_;
+      transport::NodePtr node_handle_;
+      transport::SubscriberPtr imuSub_;
+      sensor_msgs::msgs::OpticalFlow opticalFlow_message;
+      ignition::math::Vector3d opticalFlow_rate;
+      std::string namespace_;
+      std::string gyro_sub_topic_;
+      OpticalFlowOpenCV *optical_flow_;
+      // OpticalFlowPX4 *optical_flow_;
+
+      float hfov_;
+      int dt_us_;
+      int output_rate_;
+      float focal_length_;
+      double first_frame_time_;
+      uint32_t frame_time_us_;
+      bool has_gyro_;
   };
 }
 #endif

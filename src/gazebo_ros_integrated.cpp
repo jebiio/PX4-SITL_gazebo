@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Open Source Robotics Foundation
+ * Copyright (C) 2012-2015 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,392 +14,213 @@
  * limitations under the License.
  *
 */
-/*
- * Desc: 3D position interface for ground truth.
- * Author: Sachin Chitta and John Hsu
- * Date: 1 June 2008
- */
+#ifdef _WIN32
+  // Ensure that Winsock2.h is included before Windows.h, which can get
+  // pulled in by anybody (e.g., Boost).
+#include <Winsock2.h>
+#endif
 
+#include "gazebo/sensors/DepthCameraSensor.hh"
 #include "gazebo_ros_integrated.h"
-#include <ignition/math/Rand.hh>
-#ifdef ENABLE_PROFILER
-#include <ignition/common/Profiler.hh>
-#endif
-#include "kari_integrated.h"
 
-namespace gazebo
-{
-// Register this plugin with the simulator
-GZ_REGISTER_MODEL_PLUGIN(GazeboRosIntegrated)
+#include <math.h>
+#include <string>
+#include <iostream>
+#include <boost/algorithm/string.hpp>
 
-////////////////////////////////////////////////////////////////////////////////
-// Constructor
-GazeboRosIntegrated::GazeboRosIntegrated()
+using namespace cv;
+using namespace std;
+
+using namespace gazebo;
+GZ_REGISTER_SENSOR_PLUGIN(IntegratedPlugin)
+
+/////////////////////////////////////////////////
+IntegratedPlugin::IntegratedPlugin()
+: SensorPlugin(), width(0), height(0), depth(0)
 {
+
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Destructor
-GazeboRosIntegrated::~GazeboRosIntegrated()
+/////////////////////////////////////////////////
+IntegratedPlugin::~IntegratedPlugin()
 {
-  this->update_connection_.reset();
-  // Finalize the controller
-  this->rosnode_->shutdown();
-  // this->callback_queue_thread_.join();
-  delete this->rosnode_;
+  this->parentSensor.reset();
+  this->camera.reset();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Load the controller
-void GazeboRosIntegrated::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
+/////////////////////////////////////////////////
+void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 {
-  // save pointers
-  this->world_ = _parent->GetWorld();
-  this->sdf = _sdf;
+  if (!_sensor)
+    gzerr << "Invalid sensor pointer.\n";
 
-  // ros callback queue for processing subscription
-  this->deferred_load_thread_ = boost::thread(
-    boost::bind(&GazeboRosIntegrated::LoadThread, this));
-}
+  this->parentSensor = std::dynamic_pointer_cast<sensors::CameraSensor>(_sensor);
 
-////////////////////////////////////////////////////////////////////////////////
-// Load the controller
-void GazeboRosIntegrated::LoadThread()
-{
-  // load parameters
-  this->robot_namespace_ = "";
-  if (this->sdf->HasElement("robotNamespace"))
-    this->robot_namespace_ = this->sdf->Get<std::string>("robotNamespace") + "/";
-
-  if (!this->sdf->HasElement("serviceName"))
+  if (!this->parentSensor)
   {
-    ROS_INFO_NAMED("imu", "imu plugin missing <serviceName>, defaults to /default_imu");
-    this->service_name_ = "/default_imu";
+    gzerr << "IntegratedPlugin requires a CameraSensor.\n";
+    if (std::dynamic_pointer_cast<sensors::DepthCameraSensor>(_sensor))
+      gzmsg << "It is a depth camera sensor\n";
   }
-  else
-    this->service_name_ = this->sdf->Get<std::string>("serviceName");
 
-  if (!this->sdf->HasElement("topicName"))
+  if (!this->parentSensor)
   {
-    ROS_INFO_NAMED("imu", "imu plugin missing <topicName>, defaults to /default_imu");
-    this->topic_name_ = "/default_imu";
-  }
-  else
-    this->topic_name_ = this->sdf->Get<std::string>("topicName");
-
-  if (!this->sdf->HasElement("gaussianNoise"))
-  {
-    ROS_INFO_NAMED("imu", "imu plugin missing <gaussianNoise>, defaults to 0.0");
-    this->gaussian_noise_ = 0.0;
-  }
-  else
-    this->gaussian_noise_ = this->sdf->Get<double>("gaussianNoise");
-
-  if (!this->sdf->HasElement("bodyName"))
-  {
-    ROS_FATAL_NAMED("imu", "imu plugin missing <bodyName>, cannot proceed");
-    return;
-  }
-  else
-    this->link_name_ = this->sdf->Get<std::string>("bodyName");
-
-  if (!this->sdf->HasElement("xyzOffset"))
-  {
-    ROS_INFO_NAMED("imu", "imu plugin missing <xyzOffset>, defaults to 0s");
-    this->offset_.Pos() = ignition::math::Vector3d(0, 0, 0);
-  }
-  else
-    this->offset_.Pos() = this->sdf->Get<ignition::math::Vector3d>("xyzOffset");
-
-  if (!this->sdf->HasElement("rpyOffset"))
-  {
-    ROS_INFO_NAMED("imu", "imu plugin missing <rpyOffset>, defaults to 0s");
-    this->offset_.Rot() = ignition::math::Quaterniond(ignition::math::Vector3d(0, 0, 0));
-  }
-  else
-    this->offset_.Rot() = ignition::math::Quaterniond(this->sdf->Get<ignition::math::Vector3d>("rpyOffset"));
-
-  if (!this->sdf->HasElement("updateRate"))
-  {
-    ROS_DEBUG_NAMED("imu", "imu plugin missing <updateRate>, defaults to 0.0"
-             " (as fast as possible)");
-    this->update_rate_ = 0.0;
-  }
-  else
-    this->update_rate_ = this->sdf->GetElement("updateRate")->Get<double>();
-
-  if (!this->sdf->HasElement("frameName"))
-  {
-    ROS_INFO_NAMED("imu", "imu plugin missing <frameName>, defaults to <bodyName>");
-    this->frame_name_ = link_name_;
-  }
-  else
-    this->frame_name_ = this->sdf->Get<std::string>("frameName");
-
-  // Make sure the ROS node for Gazebo has already been initialized
-  if (!ros::isInitialized())
-  {
-    ROS_FATAL_STREAM_NAMED("imu", "A ROS node for Gazebo has not been initialized, unable to load plugin. "
-      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    gzerr << "IntegratedPlugin not attached to a camera sensor\n";
     return;
   }
 
-  this->rosnode_ = new ros::NodeHandle(this->robot_namespace_);
+  this->world = physics::get_world(this->parentSensor->WorldName());
 
-  // publish multi queue
-  this->pmq.startServiceThread();
-
-  // assert that the body by link_name_ exists
-  this->link = boost::dynamic_pointer_cast<physics::Link>(
-#if GAZEBO_MAJOR_VERSION >= 8
-    this->world_->EntityByName(this->link_name_));
+#if GAZEBO_MAJOR_VERSION >= 7
+  this->camera = this->parentSensor->Camera();
+  this->width = this->camera->ImageWidth();
+  this->height = this->camera->ImageHeight();
+  this->depth = this->camera->ImageDepth();
+  this->format = this->camera->ImageFormat();
+  hfov_ = float(this->camera->HFOV().Radian());
+  first_frame_time_ = this->camera->LastRenderWallTime().Double();
+  const string scopedName = _sensor->ParentName();
 #else
-    this->world_->GetEntity(this->link_name_));
+  this->camera = this->parentSensor->GetCamera();
+  this->width = this->camera->GetImageWidth();
+  this->height = this->camera->GetImageHeight();
+  this->depth = this->camera->GetImageDepth();
+  this->format = this->camera->GetImageFormat();
+  hfov_ = float(this->camera->GetHFOV().Radian());
+  first_frame_time_ = this->camera->GetLastRenderWallTime().Double();
+  const string scopedName = _sensor->GetParentName();
 #endif
-  if (!this->link)
-  {
-    ROS_FATAL_NAMED("imu", "gazebo_ros_imu plugin error: bodyName: %s does not exist\n",
-      this->link_name_.c_str());
-    return;
+
+  focal_length_ = (this->width/2)/tan(hfov_/2);
+
+  if (this->width != 64 || this->height != 64) {
+    gzerr << "[gazebo_optical_flow_plugin] Incorrect image size, must by 64 x 64.\n";
   }
 
-  // if topic name specified as empty, do not publish
-  if (this->topic_name_ != "")
-  {
-    this->pub_Queue = this->pmq.addPub<kari_estimator::kari_integrated>();
-    this->pub_ = this->rosnode_->advertise<kari_estimator::kari_integrated>(
-      this->topic_name_, 1);
+  if (_sdf->HasElement("robotNamespace"))
+    namespace_ = _sdf->GetElement("robotNamespace")->Get<std::string>();
+  else
+    gzwarn << "[gazebo_optical_flow_plugin] Please specify a robotNamespace.\n";
 
-    // advertise services on the custom queue
-    ros::AdvertiseServiceOptions aso =
-      ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
-      this->service_name_, boost::bind(&GazeboRosIntegrated::ServiceCallback,
-      this, _1, _2), ros::VoidPtr(), &this->imu_queue_);
-    this->srv_ = this->rosnode_->advertiseService(aso);
+  if (_sdf->HasElement("outputRate")) {
+    output_rate_ = _sdf->GetElement("outputRate")->Get<int>();
+  } else {
+    output_rate_ = DEFAULT_RATE;
+    gzwarn << "[gazebo_optical_flow_plugin] Using default output rate " << output_rate_ << ".";
   }
 
-  // Initialize the controller
-#if GAZEBO_MAJOR_VERSION >= 8
-  this->last_time_ = this->world_->SimTime();
-#else
-  this->last_time_ = this->world_->GetSimTime();
-#endif
+  if(_sdf->HasElement("hasGyro"))
+    has_gyro_ = _sdf->GetElement("hasGyro")->Get<bool>();
+  else
+    has_gyro_ = HAS_GYRO;
 
-  // this->initial_pose_ = this->link->GetPose();
-#if GAZEBO_MAJOR_VERSION >= 8
-  this->last_vpos_ = this->link->WorldLinearVel();
-  this->last_veul_ = this->link->WorldAngularVel();
-#else
-  this->last_vpos_ = this->link->GetWorldLinearVel().Ign();
-  this->last_veul_ = this->link->GetWorldAngularVel().Ign();
-#endif
-  this->apos_ = 0;
-  this->aeul_ = 0;
+  node_handle_ = transport::NodePtr(new transport::Node());
+  node_handle_->Init(namespace_);
 
-  // start custom queue for imu
-  // this->callback_queue_thread_ =
-  //   boost::thread(boost::bind(&GazeboRosIntegrated::IMUQueueThread, this));
+  if(has_gyro_) {
+    if(_sdf->HasElement("hasGyro"))
+      gyro_sub_topic_ = _sdf->GetElement("gyroTopic")->Get<std::string>();
+    else
+      gyro_sub_topic_ = kDefaultGyroTopic;
 
+    string topicName = "~/" + _sensor->ParentName() + gyro_sub_topic_;
+    boost::replace_all(topicName, "::", "/");
+    imuSub_ = node_handle_->Subscribe(topicName, &IntegratedPlugin::ImuCallback, this);
+  }
 
-  // New Mechanism for Updating every World Cycle
-  // Listen to the update event. This event is broadcast every
-  // simulation iteration.
-  this->update_connection_ = event::Events::ConnectWorldUpdateBegin(
-      boost::bind(&GazeboRosIntegrated::UpdateChild, this));
+  string topicName = "~/" + scopedName + "/opticalFlow";
+  boost::replace_all(topicName, "::", "/");
+
+  opticalFlow_pub_ = node_handle_->Advertise<sensor_msgs::msgs::OpticalFlow>(topicName, 10);
+
+  this->newFrameConnection = this->camera->ConnectNewImageFrame(
+      boost::bind(&IntegratedPlugin::OnNewFrame, this, _1, this->width, this->height, this->depth, this->format));
+
+  this->parentSensor->SetActive(true);
+
+  //init flow
+  optical_flow_ = new OpticalFlowOpenCV(focal_length_, focal_length_, output_rate_);
+  // _optical_flow = new OpticalFlowPX4(focal_length_, focal_length_, output_rate_, this->width);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// returns true always, imu is always calibrated in sim
-bool GazeboRosIntegrated::ServiceCallback(std_srvs::Empty::Request &req,
-                                        std_srvs::Empty::Response &res)
+/////////////////////////////////////////////////
+void IntegratedPlugin::OnNewFrame(const unsigned char * _image,
+                              unsigned int _width,
+                              unsigned int _height,
+                              unsigned int _depth,
+                              const std::string &_format)
 {
-  return true;
-}
 
-////////////////////////////////////////////////////////////////////////////////
-// Update the controller
-void GazeboRosIntegrated::UpdateChild()
-{
-#ifdef ENABLE_PROFILER
-  IGN_PROFILE("GazeboRosIntegrated::UpdateChild");
-#endif
-#if GAZEBO_MAJOR_VERSION >= 8
-  common::Time cur_time = this->world_->SimTime();
-#else
-  common::Time cur_time = this->world_->GetSimTime();
-#endif
+  //get data depending on gazebo version
+  #if GAZEBO_MAJOR_VERSION >= 7
+    _image = this->camera->ImageData(0);
+    double frame_time = this->camera->LastRenderWallTime().Double();
+  #else
+    _image = this->camera->GetImageData(0);
+    double frame_time = this->camera->GetLastRenderWallTime().Double();
+  #endif
 
-  // rate control
-  if (this->update_rate_ > 0 &&
-      (cur_time - this->last_time_).Double() < (1.0 / this->update_rate_))
-    return;
+  frame_time_us_ = (frame_time - first_frame_time_) * 1e6; //since start
 
-  if ((this->pub_.getNumSubscribers() > 0 && this->topic_name_ != ""))
-  {
-#ifdef ENABLE_PROFILER
-    IGN_PROFILE_BEGIN("fill ROS message");
-#endif
-    ignition::math::Pose3d pose;
-    ignition::math::Quaterniond rot;
-    ignition::math::Vector3d pos;
+  float flow_x_ang = 0.0f;
+  float flow_y_ang = 0.0f;
+  //calculate angular flow
+  int quality = optical_flow_->calcFlow((uchar*)_image, frame_time_us_, dt_us_, flow_x_ang, flow_y_ang);
 
-    // Get Pose/Orientation ///@todo: verify correctness
-#if GAZEBO_MAJOR_VERSION >= 8
-    pose = this->link->WorldPose();
-#else
-    pose = this->link->GetWorldPose().Ign();
-#endif
-    // apply xyz offsets and get position and rotation components
-    pos = pose.Pos() + this->offset_.Pos();
-    rot = pose.Rot();
+  if (quality >= 0) { // calcFlow(...) returns -1 if data should not be published yet -> output_rate
+    //prepare optical flow message
+    // Get the current simulation time.
+    #if GAZEBO_MAJOR_VERSION >= 9
+      common::Time now = world->SimTime();
+    #else
+      common::Time now = world->GetSimTime();
+    #endif
 
-    // apply rpy offsets
-    rot = this->offset_.Rot()*rot;
-    rot.Normalize();
-
-    // get Rates
-#if GAZEBO_MAJOR_VERSION >= 8
-    ignition::math::Vector3d vpos = this->link->WorldLinearVel();
-    ignition::math::Vector3d veul = this->link->WorldAngularVel();
-#else
-    ignition::math::Vector3d vpos = this->link->GetWorldLinearVel().Ign();
-    ignition::math::Vector3d veul = this->link->GetWorldAngularVel().Ign();
-#endif
-
-    // differentiate to get accelerations
-    double tmp_dt = this->last_time_.Double() - cur_time.Double();
-    if (tmp_dt != 0)
-    {
-      this->apos_ = (this->last_vpos_ - vpos) / tmp_dt;
-      this->aeul_ = (this->last_veul_ - veul) / tmp_dt;
-      this->last_vpos_ = vpos;
-      this->last_veul_ = veul;
+    opticalFlow_message.set_time_usec(now.Double() * 1e6);
+    opticalFlow_message.set_sensor_id(2.0);
+    opticalFlow_message.set_integration_time_us(quality ? dt_us_ : 0);
+    opticalFlow_message.set_integrated_x(quality ? flow_x_ang : 0.0f);
+    opticalFlow_message.set_integrated_y(quality ? flow_y_ang : 0.0f);
+    if(has_gyro_) {
+      opticalFlow_message.set_integrated_xgyro(opticalFlow_rate.X());
+      opticalFlow_message.set_integrated_ygyro(opticalFlow_rate.Y());
+      opticalFlow_message.set_integrated_zgyro(opticalFlow_rate.Z());
+      //reset gyro integral
+      opticalFlow_rate.Set();
+    } else {
+      //no gyro
+      opticalFlow_message.set_integrated_xgyro(NAN);
+      opticalFlow_message.set_integrated_ygyro(NAN);
+      opticalFlow_message.set_integrated_zgyro(NAN);
     }
-
-    // copy data into pose message
-    // this->imu_msg_.header.frame_id = this->frame_name_;
-    // this->imu_msg_.header.stamp.sec = cur_time.sec;
-    // this->imu_msg_.header.stamp.nsec = cur_time.nsec;
-
-    // orientation quaternion
-
-    // uncomment this if we are reporting orientation in the local frame
-    // not the case for our imu definition
-    // // apply fixed orientation offsets of initial pose
-    // rot = this->initial_pose_.Rot()*rot;
-    // rot.Normalize();
-
-    // this->imu_msg_.orientation.x = rot.X();
-    // this->imu_msg_.orientation.y = rot.Y();
-    // this->imu_msg_.orientation.z = rot.Z();
-    // this->imu_msg_.orientation.w = rot.W();
-
-    // pass euler angular rates
-    ignition::math::Vector3d linear_velocity(
-      veul.X() + this->GaussianKernel(0, this->gaussian_noise_),
-      veul.Y() + this->GaussianKernel(0, this->gaussian_noise_),
-      veul.Z() + this->GaussianKernel(0, this->gaussian_noise_));
-    // rotate into local frame
-    // @todo: deal with offsets!
-    linear_velocity = rot.RotateVector(linear_velocity);
-    // this->imu_msg_.angular_velocity.x    = 7777.7777;
-    // this->imu_msg_.angular_velocity.y    = linear_velocity.Y();
-    // this->imu_msg_.angular_velocity.z    = linear_velocity.Z();
-
-    // pass accelerations
-    ignition::math::Vector3d linear_acceleration(
-      apos_.X() + this->GaussianKernel(0, this->gaussian_noise_),
-      apos_.Y() + this->GaussianKernel(0, this->gaussian_noise_),
-      apos_.Z() + this->GaussianKernel(0, this->gaussian_noise_));
-    // rotate into local frame
-    // @todo: deal with offsets!
-    linear_acceleration = rot.RotateVector(linear_acceleration);
-    // this->imu_msg_.linear_acceleration.x    = linear_acceleration.X();
-    // this->imu_msg_.linear_acceleration.y    = linear_acceleration.Y();
-    // this->imu_msg_.linear_acceleration.z    = linear_acceleration.Z();
-
-    // fill in covariance matrix
-    /// @todo: let user set separate linear and angular covariance values.
-    /// @todo: apply appropriate rotations from frame_pose
-    double gn2 = this->gaussian_noise_*this->gaussian_noise_;
-    // this->imu_msg_.orientation_covariance[0] = gn2;
-    // this->imu_msg_.orientation_covariance[4] = gn2;
-    // this->imu_msg_.orientation_covariance[8] = gn2;
-    // this->imu_msg_.angular_velocity_covariance[0] = gn2;
-    // this->imu_msg_.angular_velocity_covariance[4] = gn2;
-    // this->imu_msg_.angular_velocity_covariance[8] = gn2;
-    // this->imu_msg_.linear_acceleration_covariance[0] = gn2;
-    // this->imu_msg_.linear_acceleration_covariance[4] = gn2;
-    // this->imu_msg_.linear_acceleration_covariance[8] = gn2;
-
-
-    this->integrated_msg_.opt.integrated_x = 1.1;
-    this->integrated_msg_.imu.orientation.x = 2.2;
-    this->integrated_msg_.alt.range = 3.3;
-
-    {
-      boost::mutex::scoped_lock lock(this->lock_);
-      // publish to ros
-      if (this->pub_.getNumSubscribers() > 0 && this->topic_name_ != "")
-          this->pub_Queue->push(this->integrated_msg_, this->pub_);
-    }
-
-    // save last time stamp
-    this->last_time_ = cur_time;
-#ifdef ENABLE_PROFILER
-    IGN_PROFILE_END();
-#endif
+    opticalFlow_message.set_temperature(20.0f);
+    opticalFlow_message.set_quality(quality);
+    opticalFlow_message.set_time_delta_distance_us(0);
+    opticalFlow_message.set_distance(0.0f); //get real values in gazebo_mavlink_interface.cpp
+    //send message
+    opticalFlow_pub_->Publish(opticalFlow_message);
   }
 }
 
+void IntegratedPlugin::ImuCallback(ConstIMUPtr& _imu) {
+  //accumulate gyro measurements that are needed for the optical flow message
+  #if GAZEBO_MAJOR_VERSION >= 9
+    common::Time now = world->SimTime();
+  #else
+    common::Time now = world->GetSimTime();
+  #endif
 
-//////////////////////////////////////////////////////////////////////////////
-// Utility for adding noise
-double GazeboRosIntegrated::GaussianKernel(double mu, double sigma)
-{
-  // using Box-Muller transform to generate two independent standard
-  // normally disbributed normal variables see wikipedia
+  uint32_t now_us = now.Double() * 1e6;
+  ignition::math::Vector3d px4flow_gyro = ignition::math::Vector3d(_imu->angular_velocity().x(),
+                                                                   _imu->angular_velocity().y(),
+                                                                   _imu->angular_velocity().z());
 
-  // normalized uniform random variable
-  double U = ignition::math::Rand::DblUniform();
+  static uint32_t last_dt_us = now_us;
+  uint32_t dt_us = now_us - last_dt_us;
 
-  // normalized uniform random variable
-  double V = ignition::math::Rand::DblUniform();
-
-  double X = sqrt(-2.0 * ::log(U)) * cos(2.0*M_PI * V);
-  // double Y = sqrt(-2.0 * ::log(U)) * sin(2.0*M_PI * V);
-
-  // there are 2 indep. vars, we'll just use X
-  // scale to our mu and sigma
-  X = sigma * X + mu;
-  return X;
+  if (dt_us > 1000) {
+    opticalFlow_rate += px4flow_gyro * (dt_us / 1000000.0f);
+    last_dt_us = now_us;
+  }
 }
-
-void GazeboRosIntegrated::updateIMU(kari_estimator::kari_integrated& msg)
-{
-
-}
-
-void GazeboRosIntegrated::updateAltimeter(kari_estimator::kari_integrated& msg)
-{
-
-}
-
-
-void GazeboRosIntegrated::updateOpticalflow(kari_estimator::kari_integrated& msg)
-{
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Put laser data to the interface
-// void GazeboRosIntegrated::IMUQueueThread()
-// {
-//   static const double timeout = 0.01;
-
-//   while (this->rosnode_->ok())
-//   {
-//     this->imu_queue_.callAvailable(ros::WallDuration(timeout));
-//   }
-// }
-}
+/* vim: set et fenc=utf-8 ff=unix sts=0 sw=2 ts=2 : */
