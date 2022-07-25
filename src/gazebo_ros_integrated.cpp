@@ -375,6 +375,22 @@ double GazeboRosIntegrated::GaussianKernel(double mu, double sigma)
   return X;
 }
 
+void GazeboRosIntegrated::updateIMU(kari_estimator::kari_integrated& msg)
+{
+
+}
+
+void GazeboRosIntegrated::updateAltimeter(kari_estimator::kari_integrated& msg)
+{
+
+}
+
+
+void GazeboRosIntegrated::updateOpticalflow(kari_estimator::kari_integrated& msg)
+{
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Put laser data to the interface
 // void GazeboRosIntegrated::IMUQueueThread()

@@ -125,6 +125,12 @@ namespace gazebo
 
     // ros publish multi queue, prevents publish() blocking
     private: PubMultiQueue pmq;
+
+    public:
+      void updateIMU(kari_estimator::kari_integrated& msg);
+      void updateAltimeter(kari_estimator::kari_integrated& msg);
+      void updateOpticalflow(kari_estimator::kari_integrated& msg);
+
   };
 }
 #endif
