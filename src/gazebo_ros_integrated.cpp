@@ -332,11 +332,10 @@ void GazeboRosIntegrated::UpdateChild()
     // this->imu_msg_.linear_acceleration_covariance[4] = gn2;
     // this->imu_msg_.linear_acceleration_covariance[8] = gn2;
 
-    this->integrated_msg_.imu_aa = 1;
-    this->integrated_msg_.imu_bb = 1.1;
-    this->integrated_msg_.altimeter_aa = 1;
-    this->integrated_msg_.altimeter_bb = 1;
 
+    this->integrated_msg_.opt.integrated_x = 1.1;
+    this->integrated_msg_.imu.orientation.x = 2.2;
+    this->integrated_msg_.alt.range = 3.3;
 
     {
       boost::mutex::scoped_lock lock(this->lock_);

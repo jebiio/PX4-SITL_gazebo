@@ -15,6 +15,9 @@
 #include <ros/builtin_message_traits.h>
 #include <ros/message_operations.h>
 
+#include <sensor_msgs/Range.h>
+#include <sensor_msgs/Imu.h>
+#include "optical_flow.h"
 
 namespace kari_estimator
 {
@@ -24,42 +27,27 @@ struct kari_integrated_
   typedef kari_integrated_<ContainerAllocator> Type;
 
   kari_integrated_()
-    : imu_aa(0)
-    , imu_bb(0.0)
-    , altimeter_aa(0)
-    , altimeter_bb(0.0)
-    , optical_aa(0)
-    , optical_bb(0.0)  {
+    : alt()
+    , imu()
+    , opt()  {
     }
   kari_integrated_(const ContainerAllocator& _alloc)
-    : imu_aa(0)
-    , imu_bb(0.0)
-    , altimeter_aa(0)
-    , altimeter_bb(0.0)
-    , optical_aa(0)
-    , optical_bb(0.0)  {
+    : alt(_alloc)
+    , imu(_alloc)
+    , opt(_alloc)  {
   (void)_alloc;
     }
 
 
 
-   typedef uint32_t _imu_aa_type;
-  _imu_aa_type imu_aa;
+   typedef  ::sensor_msgs::Range_<ContainerAllocator>  _alt_type;
+  _alt_type alt;
 
-   typedef float _imu_bb_type;
-  _imu_bb_type imu_bb;
+   typedef  ::sensor_msgs::Imu_<ContainerAllocator>  _imu_type;
+  _imu_type imu;
 
-   typedef uint32_t _altimeter_aa_type;
-  _altimeter_aa_type altimeter_aa;
-
-   typedef float _altimeter_bb_type;
-  _altimeter_bb_type altimeter_bb;
-
-   typedef uint32_t _optical_aa_type;
-  _optical_aa_type optical_aa;
-
-   typedef float _optical_bb_type;
-  _optical_bb_type optical_bb;
+   typedef  ::kari_estimator::optical_flow_<ContainerAllocator>  _opt_type;
+  _opt_type opt;
 
 
 
@@ -90,12 +78,9 @@ return s;
 template<typename ContainerAllocator1, typename ContainerAllocator2>
 bool operator==(const ::kari_estimator::kari_integrated_<ContainerAllocator1> & lhs, const ::kari_estimator::kari_integrated_<ContainerAllocator2> & rhs)
 {
-  return lhs.imu_aa == rhs.imu_aa &&
-    lhs.imu_bb == rhs.imu_bb &&
-    lhs.altimeter_aa == rhs.altimeter_aa &&
-    lhs.altimeter_bb == rhs.altimeter_bb &&
-    lhs.optical_aa == rhs.optical_aa &&
-    lhs.optical_bb == rhs.optical_bb;
+  return lhs.alt == rhs.alt &&
+    lhs.imu == rhs.imu &&
+    lhs.opt == rhs.opt;
 }
 
 template<typename ContainerAllocator1, typename ContainerAllocator2>
@@ -128,12 +113,12 @@ struct IsMessage< ::kari_estimator::kari_integrated_<ContainerAllocator> const>
 
 template <class ContainerAllocator>
 struct IsFixedSize< ::kari_estimator::kari_integrated_<ContainerAllocator> >
-  : TrueType
+  : FalseType
   { };
 
 template <class ContainerAllocator>
 struct IsFixedSize< ::kari_estimator::kari_integrated_<ContainerAllocator> const>
-  : TrueType
+  : FalseType
   { };
 
 template <class ContainerAllocator>
@@ -152,12 +137,12 @@ struct MD5Sum< ::kari_estimator::kari_integrated_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "36a844b9116e52ef6e531904cedbf9e6";
+    return "bed09599cb670986bb4c68dc1b3f1cda";
   }
 
   static const char* value(const ::kari_estimator::kari_integrated_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0x36a844b9116e52efULL;
-  static const uint64_t static_value2 = 0x6e531904cedbf9e6ULL;
+  static const uint64_t static_value1 = 0xbed09599cb670986ULL;
+  static const uint64_t static_value2 = 0xbb4c68dc1b3f1cdaULL;
 };
 
 template<class ContainerAllocator>
@@ -176,14 +161,129 @@ struct Definition< ::kari_estimator::kari_integrated_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "uint32 imu_aa\n"
-"float32 imu_bb\n"
+    return "sensor_msgs/Range alt\n"
+"sensor_msgs/Imu imu\n"
+"kari_estimator/optical_flow opt\n"
+"================================================================================\n"
+"MSG: sensor_msgs/Range\n"
+"# Single range reading from an active ranger that emits energy and reports\n"
+"# one range reading that is valid along an arc at the distance measured. \n"
+"# This message is  not appropriate for laser scanners. See the LaserScan\n"
+"# message if you are working with a laser scanner.\n"
 "\n"
-"uint32 altimeter_aa\n"
-"float32 altimeter_bb\n"
+"# This message also can represent a fixed-distance (binary) ranger.  This\n"
+"# sensor will have min_range===max_range===distance of detection.\n"
+"# These sensors follow REP 117 and will output -Inf if the object is detected\n"
+"# and +Inf if the object is outside of the detection range.\n"
 "\n"
-"uint32 optical_aa\n"
-"float32 optical_bb\n"
+"Header header           # timestamp in the header is the time the ranger\n"
+"                        # returned the distance reading\n"
+"\n"
+"# Radiation type enums\n"
+"# If you want a value added to this list, send an email to the ros-users list\n"
+"uint8 ULTRASOUND=0\n"
+"uint8 INFRARED=1\n"
+"\n"
+"uint8 radiation_type    # the type of radiation used by the sensor\n"
+"                        # (sound, IR, etc) [enum]\n"
+"\n"
+"float32 field_of_view   # the size of the arc that the distance reading is\n"
+"                        # valid for [rad]\n"
+"                        # the object causing the range reading may have\n"
+"                        # been anywhere within -field_of_view/2 and\n"
+"                        # field_of_view/2 at the measured range. \n"
+"                        # 0 angle corresponds to the x-axis of the sensor.\n"
+"\n"
+"float32 min_range       # minimum range value [m]\n"
+"float32 max_range       # maximum range value [m]\n"
+"                        # Fixed distance rangers require min_range==max_range\n"
+"\n"
+"float32 range           # range data [m]\n"
+"                        # (Note: values < range_min or > range_max\n"
+"                        # should be discarded)\n"
+"                        # Fixed distance rangers only output -Inf or +Inf.\n"
+"                        # -Inf represents a detection within fixed distance.\n"
+"                        # (Detection too close to the sensor to quantify)\n"
+"                        # +Inf represents no detection within the fixed distance.\n"
+"                        # (Object out of range)\n"
+"================================================================================\n"
+"MSG: std_msgs/Header\n"
+"# Standard metadata for higher-level stamped data types.\n"
+"# This is generally used to communicate timestamped data \n"
+"# in a particular coordinate frame.\n"
+"# \n"
+"# sequence ID: consecutively increasing ID \n"
+"uint32 seq\n"
+"#Two-integer timestamp that is expressed as:\n"
+"# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')\n"
+"# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')\n"
+"# time-handling sugar is provided by the client library\n"
+"time stamp\n"
+"#Frame this data is associated with\n"
+"string frame_id\n"
+"\n"
+"================================================================================\n"
+"MSG: sensor_msgs/Imu\n"
+"# This is a message to hold data from an IMU (Inertial Measurement Unit)\n"
+"#\n"
+"# Accelerations should be in m/s^2 (not in g's), and rotational velocity should be in rad/sec\n"
+"#\n"
+"# If the covariance of the measurement is known, it should be filled in (if all you know is the \n"
+"# variance of each measurement, e.g. from the datasheet, just put those along the diagonal)\n"
+"# A covariance matrix of all zeros will be interpreted as \"covariance unknown\", and to use the\n"
+"# data a covariance will have to be assumed or gotten from some other source\n"
+"#\n"
+"# If you have no estimate for one of the data elements (e.g. your IMU doesn't produce an orientation \n"
+"# estimate), please set element 0 of the associated covariance matrix to -1\n"
+"# If you are interpreting this message, please check for a value of -1 in the first element of each \n"
+"# covariance matrix, and disregard the associated estimate.\n"
+"\n"
+"Header header\n"
+"\n"
+"geometry_msgs/Quaternion orientation\n"
+"float64[9] orientation_covariance # Row major about x, y, z axes\n"
+"\n"
+"geometry_msgs/Vector3 angular_velocity\n"
+"float64[9] angular_velocity_covariance # Row major about x, y, z axes\n"
+"\n"
+"geometry_msgs/Vector3 linear_acceleration\n"
+"float64[9] linear_acceleration_covariance # Row major x, y z \n"
+"\n"
+"================================================================================\n"
+"MSG: geometry_msgs/Quaternion\n"
+"# This represents an orientation in free space in quaternion form.\n"
+"\n"
+"float64 x\n"
+"float64 y\n"
+"float64 z\n"
+"float64 w\n"
+"\n"
+"================================================================================\n"
+"MSG: geometry_msgs/Vector3\n"
+"# This represents a vector in free space. \n"
+"# It is only meant to represent a direction. Therefore, it does not\n"
+"# make sense to apply a translation to it (e.g., when applying a \n"
+"# generic rigid transformation to a Vector3, tf2 will only apply the\n"
+"# rotation). If you want your data to be translatable too, use the\n"
+"# geometry_msgs/Point message instead.\n"
+"\n"
+"float64 x\n"
+"float64 y\n"
+"float64 z\n"
+"================================================================================\n"
+"MSG: kari_estimator/optical_flow\n"
+"int64 time_usec\n"
+"int32 sensor_id\n"
+"int32 integration_time_us\n"
+"float32 integrated_x\n"
+"float32 integrated_y\n"
+"float32 integrated_xgyro\n"
+"float32 integrated_ygyro\n"
+"float32 integrated_zgyro\n"
+"float32 temperature\n"
+"int32 quality\n"
+"int32 time_delta_distance_us\n"
+"float32 distance\n"
 ;
   }
 
@@ -202,12 +302,9 @@ namespace serialization
   {
     template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
     {
-      stream.next(m.imu_aa);
-      stream.next(m.imu_bb);
-      stream.next(m.altimeter_aa);
-      stream.next(m.altimeter_bb);
-      stream.next(m.optical_aa);
-      stream.next(m.optical_bb);
+      stream.next(m.alt);
+      stream.next(m.imu);
+      stream.next(m.opt);
     }
 
     ROS_DECLARE_ALLINONE_SERIALIZER
@@ -226,18 +323,15 @@ struct Printer< ::kari_estimator::kari_integrated_<ContainerAllocator> >
 {
   template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::kari_estimator::kari_integrated_<ContainerAllocator>& v)
   {
-    s << indent << "imu_aa: ";
-    Printer<uint32_t>::stream(s, indent + "  ", v.imu_aa);
-    s << indent << "imu_bb: ";
-    Printer<float>::stream(s, indent + "  ", v.imu_bb);
-    s << indent << "altimeter_aa: ";
-    Printer<uint32_t>::stream(s, indent + "  ", v.altimeter_aa);
-    s << indent << "altimeter_bb: ";
-    Printer<float>::stream(s, indent + "  ", v.altimeter_bb);
-    s << indent << "optical_aa: ";
-    Printer<uint32_t>::stream(s, indent + "  ", v.optical_aa);
-    s << indent << "optical_bb: ";
-    Printer<float>::stream(s, indent + "  ", v.optical_bb);
+    s << indent << "alt: ";
+    s << std::endl;
+    Printer< ::sensor_msgs::Range_<ContainerAllocator> >::stream(s, indent + "  ", v.alt);
+    s << indent << "imu: ";
+    s << std::endl;
+    Printer< ::sensor_msgs::Imu_<ContainerAllocator> >::stream(s, indent + "  ", v.imu);
+    s << indent << "opt: ";
+    s << std::endl;
+    Printer< ::kari_estimator::optical_flow_<ContainerAllocator> >::stream(s, indent + "  ", v.opt);
   }
 };
 
