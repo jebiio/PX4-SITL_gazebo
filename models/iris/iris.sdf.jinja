@@ -52,39 +52,6 @@
       <gravity>1</gravity>
       <velocity_decay/>
     </link>
-    <link name='/integrated_link'>
-      <pose>0 0 0.2 0 0 0</pose>
-      <inertial>
-        <pose>0 0 0 0 0 0</pose>
-        <mass>0.015</mass>
-        <inertia>
-          <ixx>1e-05</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>1e-05</iyy>
-          <iyz>0</iyz>
-          <izz>1e-05</izz>
-        </inertia>
-      </inertial>
-    </link>
-    <joint name='/integrated_joint' type='revolute'>
-      <child>/integrated_link</child>
-      <parent>base_link</parent>
-      <axis>
-        <xyz>1 0 0</xyz>
-        <limit>
-          <lower>0</lower>
-          <upper>0</upper>
-          <effort>0</effort>
-          <velocity>0</velocity>
-        </limit>
-        <dynamics>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
-      </axis>
-    </joint>
     <link name='/imu_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
@@ -757,16 +724,10 @@
       <bodyName>base_link</bodyName>
       <topicName>/gazebo_ros_groundtruth</topicName>
     </plugin>
-    <plugin name='gazebo_ros_integrated' filename='libgazebo_ros_integrated.so'>
-      <robotNamespace/>
-      <bodyName>/integrated_link</bodyName>
-      <topicName>/gazebo_ros_integrated</topicName>
-    </plugin>
     <include>
       <uri>model://kariflow</uri>
       <pose>0.05 0 -0.05 0 0 0</pose>
     </include>
-
     <joint name="kariflow_joint" type="revolute">
       <parent>base_link</parent>
       <child>kariflow::link</child>

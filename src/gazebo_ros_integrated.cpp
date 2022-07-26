@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifdef _WIN32
-  // Ensure that Winsock2.h is included before Windows.h, which can get
-  // pulled in by anybody (e.g., Boost).
+// Ensure that Winsock2.h is included before Windows.h, which can get
+// pulled in by anybody (e.g., Boost).
 #include <Winsock2.h>
 #endif
 
@@ -36,9 +36,8 @@ GZ_REGISTER_SENSOR_PLUGIN(IntegratedPlugin)
 
 /////////////////////////////////////////////////
 IntegratedPlugin::IntegratedPlugin()
-: SensorPlugin(), width(0), height(0), depth(0)
+    : SensorPlugin(), width(0), height(0), depth(0)
 {
-
 }
 
 /////////////////////////////////////////////////
@@ -46,6 +45,10 @@ IntegratedPlugin::~IntegratedPlugin()
 {
   this->parentSensor.reset();
   this->camera.reset();
+
+  this->rosnode_->shutdown();
+
+  delete this->rosnode_;
 }
 
 /////////////////////////////////////////////////
@@ -91,9 +94,10 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   const string scopedName = _sensor->GetParentName();
 #endif
 
-  focal_length_ = (this->width/2)/tan(hfov_/2);
+  focal_length_ = (this->width / 2) / tan(hfov_ / 2);
 
-  if (this->width != 64 || this->height != 64) {
+  if (this->width != 64 || this->height != 64)
+  {
     gzerr << "[gazebo_optical_flow_plugin] Incorrect image size, must by 64 x 64.\n";
   }
 
@@ -102,14 +106,17 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   else
     gzwarn << "[gazebo_optical_flow_plugin] Please specify a robotNamespace.\n";
 
-  if (_sdf->HasElement("outputRate")) {
+  if (_sdf->HasElement("outputRate"))
+  {
     output_rate_ = _sdf->GetElement("outputRate")->Get<int>();
-  } else {
+  }
+  else
+  {
     output_rate_ = DEFAULT_RATE;
     gzwarn << "[gazebo_optical_flow_plugin] Using default output rate " << output_rate_ << ".";
   }
 
-  if(_sdf->HasElement("hasGyro"))
+  if (_sdf->HasElement("hasGyro"))
     has_gyro_ = _sdf->GetElement("hasGyro")->Get<bool>();
   else
     has_gyro_ = HAS_GYRO;
@@ -117,8 +124,9 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   node_handle_ = transport::NodePtr(new transport::Node());
   node_handle_->Init(namespace_);
 
-  if(has_gyro_) {
-    if(_sdf->HasElement("hasGyro"))
+  if (has_gyro_)
+  {
+    if (_sdf->HasElement("hasGyro"))
       gyro_sub_topic_ = _sdf->GetElement("gyroTopic")->Get<std::string>();
     else
       gyro_sub_topic_ = kDefaultGyroTopic;
@@ -136,59 +144,88 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   this->newFrameConnection = this->camera->ConnectNewImageFrame(
       boost::bind(&IntegratedPlugin::OnNewFrame, this, _1, this->width, this->height, this->depth, this->format));
 
+  if (!(_sdf->HasElement("topicName")))
+  {
+    ROS_WARN_NAMED("gazebo_ros_integrated", "topic_name_ : /gazebo_ros_integarted");
+    topic_name_ = "/gazebo_ros_integrated";
+  }
+  else
+    topic_name_ = _sdf->Get<std::string>("topicName");
+
+  if (!ros::isInitialized())
+  {
+    ROS_FATAL_STREAM_NAMED("imu", "A ROS node for Gazebo has not been initialized, unable to load plugin. "
+                                      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    return;
+  }
+  else
+  {
+    gzerr << "Not loading plugin since ROS hasn't been "
+          << "properly initialized.  Try starting gazebo with ros plugin:\n"
+          << "  gazebo -s libgazebo_ros_api_plugin.so\n";
+  }
+
+  this->rosnode_ = new ros::NodeHandle(namespace_);
+
+  this->pub_ = this->rosnode_->advertise<kari_estimator::kari_integrated>(
+      this->topic_name_, 1);
+
   this->parentSensor->SetActive(true);
 
-  //init flow
+  // init flow
   optical_flow_ = new OpticalFlowOpenCV(focal_length_, focal_length_, output_rate_);
   // _optical_flow = new OpticalFlowPX4(focal_length_, focal_length_, output_rate_, this->width);
 }
 
-/////////////////////////////////////////////////
-void IntegratedPlugin::OnNewFrame(const unsigned char * _image,
-                              unsigned int _width,
-                              unsigned int _height,
-                              unsigned int _depth,
-                              const std::string &_format)
+void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
+                                  unsigned int _width,
+                                  unsigned int _height,
+                                  unsigned int _depth,
+                                  const std::string &_format)
 {
 
-  //get data depending on gazebo version
-  #if GAZEBO_MAJOR_VERSION >= 7
-    _image = this->camera->ImageData(0);
-    double frame_time = this->camera->LastRenderWallTime().Double();
-  #else
-    _image = this->camera->GetImageData(0);
-    double frame_time = this->camera->GetLastRenderWallTime().Double();
-  #endif
+// get data depending on gazebo version
+#if GAZEBO_MAJOR_VERSION >= 7
+  _image = this->camera->ImageData(0);
+  double frame_time = this->camera->LastRenderWallTime().Double();
+#else
+  _image = this->camera->GetImageData(0);
+  double frame_time = this->camera->GetLastRenderWallTime().Double();
+#endif
 
-  frame_time_us_ = (frame_time - first_frame_time_) * 1e6; //since start
+  frame_time_us_ = (frame_time - first_frame_time_) * 1e6; // since start
 
   float flow_x_ang = 0.0f;
   float flow_y_ang = 0.0f;
-  //calculate angular flow
-  int quality = optical_flow_->calcFlow((uchar*)_image, frame_time_us_, dt_us_, flow_x_ang, flow_y_ang);
+  // calculate angular flow
+  int quality = optical_flow_->calcFlow((uchar *)_image, frame_time_us_, dt_us_, flow_x_ang, flow_y_ang);
 
-  if (quality >= 0) { // calcFlow(...) returns -1 if data should not be published yet -> output_rate
-    //prepare optical flow message
-    // Get the current simulation time.
-    #if GAZEBO_MAJOR_VERSION >= 9
-      common::Time now = world->SimTime();
-    #else
-      common::Time now = world->GetSimTime();
-    #endif
+  if (quality >= 0)
+  { // calcFlow(...) returns -1 if data should not be published yet -> output_rate
+// prepare optical flow message
+//  Get the current simulation time.
+#if GAZEBO_MAJOR_VERSION >= 9
+    common::Time now = world->SimTime();
+#else
+    common::Time now = world->GetSimTime();
+#endif
 
     opticalFlow_message.set_time_usec(now.Double() * 1e6);
     opticalFlow_message.set_sensor_id(2.0);
     opticalFlow_message.set_integration_time_us(quality ? dt_us_ : 0);
     opticalFlow_message.set_integrated_x(quality ? flow_x_ang : 0.0f);
     opticalFlow_message.set_integrated_y(quality ? flow_y_ang : 0.0f);
-    if(has_gyro_) {
+    if (has_gyro_)
+    {
       opticalFlow_message.set_integrated_xgyro(opticalFlow_rate.X());
       opticalFlow_message.set_integrated_ygyro(opticalFlow_rate.Y());
       opticalFlow_message.set_integrated_zgyro(opticalFlow_rate.Z());
-      //reset gyro integral
+      // reset gyro integral
       opticalFlow_rate.Set();
-    } else {
-      //no gyro
+    }
+    else
+    {
+      // no gyro
       opticalFlow_message.set_integrated_xgyro(NAN);
       opticalFlow_message.set_integrated_ygyro(NAN);
       opticalFlow_message.set_integrated_zgyro(NAN);
@@ -196,19 +233,24 @@ void IntegratedPlugin::OnNewFrame(const unsigned char * _image,
     opticalFlow_message.set_temperature(20.0f);
     opticalFlow_message.set_quality(quality);
     opticalFlow_message.set_time_delta_distance_us(0);
-    opticalFlow_message.set_distance(0.0f); //get real values in gazebo_mavlink_interface.cpp
-    //send message
+    opticalFlow_message.set_distance(0.0f); // get real values in gazebo_mavlink_interface.cpp
+    // send message
     opticalFlow_pub_->Publish(opticalFlow_message);
+
+    int_msg_.imu.orientation.x = 1.1;
+
+    this->pub_.publish(this->int_msg_);
   }
 }
 
-void IntegratedPlugin::ImuCallback(ConstIMUPtr& _imu) {
-  //accumulate gyro measurements that are needed for the optical flow message
-  #if GAZEBO_MAJOR_VERSION >= 9
-    common::Time now = world->SimTime();
-  #else
-    common::Time now = world->GetSimTime();
-  #endif
+void IntegratedPlugin::ImuCallback(ConstIMUPtr &_imu)
+{
+// accumulate gyro measurements that are needed for the optical flow message
+#if GAZEBO_MAJOR_VERSION >= 9
+  common::Time now = world->SimTime();
+#else
+  common::Time now = world->GetSimTime();
+#endif
 
   uint32_t now_us = now.Double() * 1e6;
   ignition::math::Vector3d px4flow_gyro = ignition::math::Vector3d(_imu->angular_velocity().x(),
@@ -218,9 +260,11 @@ void IntegratedPlugin::ImuCallback(ConstIMUPtr& _imu) {
   static uint32_t last_dt_us = now_us;
   uint32_t dt_us = now_us - last_dt_us;
 
-  if (dt_us > 1000) {
+  if (dt_us > 1000)
+  {
     opticalFlow_rate += px4flow_gyro * (dt_us / 1000000.0f);
     last_dt_us = now_us;
   }
 }
+
 /* vim: set et fenc=utf-8 ff=unix sts=0 sw=2 ts=2 : */
