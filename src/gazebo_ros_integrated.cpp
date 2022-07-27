@@ -134,7 +134,16 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
     string topicName = "~/" + _sensor->ParentName() + gyro_sub_topic_;
     boost::replace_all(topicName, "::", "/");
     imuSub_ = node_handle_->Subscribe(topicName, &IntegratedPlugin::ImuCallback, this);
+    ROS_WARN("%s!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", topicName.c_str());
   }
+
+  if (_sdf->HasElement("altTopic"))
+    alt_sub_topic_ = _sdf->GetElement("altTopic")->Get<std::string>();
+  else
+    alt_sub_topic_ = "/gazebo_alt";
+
+  string altTopicName = "~/iris_obs_avoid/link/iris";
+  altSub_ = node_handle_->Subscribe(altTopicName, &IntegratedPlugin::AltCallback, this);
 
   string topicName = "~/" + scopedName + "/opticalFlow";
   boost::replace_all(topicName, "::", "/");
@@ -238,6 +247,9 @@ void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
     opticalFlow_pub_->Publish(opticalFlow_message);
 
     int_msg_.imu.orientation.x = 1.1;
+    int_msg_.alt.range = alt_msg.current_distance();
+
+    // ROS_INFO("current dis: %f", int_msg_.alt.range);
 
     this->pub_.publish(this->int_msg_);
   }
@@ -268,3 +280,10 @@ void IntegratedPlugin::ImuCallback(ConstIMUPtr &_imu)
 }
 
 /* vim: set et fenc=utf-8 ff=unix sts=0 sw=2 ts=2 : */
+
+void IntegratedPlugin::AltCallback(const boost::shared_ptr<const sensor_msgs::msgs::Range> &_alt)
+{
+  alt_msg.set_current_distance(_alt->current_distance());
+
+  ROS_WARN("current dis: %f", _alt->current_distance());
+}

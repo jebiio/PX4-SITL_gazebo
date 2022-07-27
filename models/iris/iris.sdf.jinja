@@ -418,7 +418,7 @@
       <motorSpeedPubTopic>/motor_speed/3</motorSpeedPubTopic>
       <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
     </plugin>
-        <link name='/lidar_link'>
+    <link name='/lidar_link'>
       <pose>0 0 0.06 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -658,7 +658,7 @@
         </limit>
       </axis>
     </joint>
-        <link name='/alt_link'>
+    <link name='/alt_link'>
       <pose>0 0 -0.06 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -704,11 +704,11 @@
             <stddev>0.02</stddev>
           </noise>
         </ray>
-        <plugin name="gazebo_ros_range" filename="libgazebo_ros_range.so">
+        <plugin name="LaserPlugin" filename="libgazebo_lidar_plugin.so">
           <robotNamespace></robotNamespace>
-          <topicName>/gazebo_ros_alt</topicName>
           <min_distance>0.2</min_distance>
           <max_distance>15.0</max_distance>
+          <topicName>/gazebo_alt</topicName>
         </plugin>
         <always_on>1</always_on>
         <update_rate>20</update_rate>
@@ -738,6 +738,6 @@
           <lower>0</lower>
         </limit>
       </axis>
-    </joint>    
+    </joint>
   </model>
 </sdf>

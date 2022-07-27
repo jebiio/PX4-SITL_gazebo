@@ -42,6 +42,14 @@
 #include <ros/ros.h>
 #include "kari_integrated.h"
 
+#include <gazebo/sensors/SensorTypes.hh>
+#include <gazebo/sensors/Sensor.hh>
+#include <gazebo/sensors/RaySensor.hh>
+
+#include <Range.pb.h>
+
+#include <common.h>
+
 #define DEFAULT_RATE 20
 #define HAS_GYRO true
 
@@ -50,6 +58,7 @@ using namespace std;
 
 namespace gazebo
 {
+  const boost::shared_ptr<const sensor_msgs::msgs::Range> LidarPtr;
   static const std::string kDefaultGyroTopic = "/px4flow/imu";
 
   class GAZEBO_VISIBLE IntegratedPlugin : public SensorPlugin
@@ -62,6 +71,8 @@ namespace gazebo
                             unsigned int _width, unsigned int _height,
                             unsigned int _depth, const std::string &_format);
     void ImuCallback(ConstIMUPtr &_imu);
+    // void AltCallback(LidarPtr &_alt);
+    void AltCallback(const boost::shared_ptr<const sensor_msgs::msgs::Range> &_alt);
 
   protected:
     unsigned int width, height, depth;
@@ -94,6 +105,10 @@ namespace gazebo
     double first_frame_time_;
     uint32_t frame_time_us_;
     bool has_gyro_;
+
+    std::string alt_sub_topic_;
+    transport::SubscriberPtr altSub_;
+    sensor_msgs::msgs::Range alt_msg;
   };
 }
 #endif

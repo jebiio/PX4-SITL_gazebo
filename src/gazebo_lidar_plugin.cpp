@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 /*
  * Desc: Contact plugin
  * Author: Nate Koenig mod by John Hsu
@@ -29,6 +29,8 @@
 #include <boost/algorithm/string.hpp>
 #include <common.h>
 #include <ignition/math/Rand.hh>
+
+#include <ros/ros.h>
 
 using namespace gazebo;
 using namespace std;
@@ -69,29 +71,40 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   else
     gzwarn << "[gazebo_lidar_plugin] Please specify a robotNamespace.\n";
 
-  if (_sdf->HasElement("simulate_fog")) {
+  if (_sdf->HasElement("simulate_fog"))
+  {
     simulate_fog_ = _sdf->GetElement("simulate_fog")->Get<bool>();
-  } else {
+  }
+  else
+  {
     simulate_fog_ = false;
   }
   // get minimum distance
-  if (_sdf->HasElement("min_distance")) {
+  if (_sdf->HasElement("min_distance"))
+  {
     min_distance_ = _sdf->GetElement("min_distance")->Get<double>();
-    if (min_distance_ < kSensorMinDistance) {
+    if (min_distance_ < kSensorMinDistance)
+    {
       min_distance_ = kSensorMinDistance;
     }
-  } else {
+  }
+  else
+  {
     gzwarn << "[gazebo_lidar_plugin] Using default minimum distance: " << kDefaultMinDistance << "\n";
     min_distance_ = kDefaultMinDistance;
   }
 
   // get maximum distance
-  if (_sdf->HasElement("max_distance")) {
+  if (_sdf->HasElement("max_distance"))
+  {
     max_distance_ = _sdf->GetElement("max_distance")->Get<double>();
-    if (max_distance_ > kSensorMaxDistance) {
+    if (max_distance_ > kSensorMaxDistance)
+    {
       max_distance_ = kSensorMaxDistance;
     }
-  } else {
+  }
+  else
+  {
     gzwarn << "[gazebo_lidar_plugin] Using default maximum distance: " << kDefaultMaxDistance << "\n";
     max_distance_ = kDefaultMaxDistance;
   }
@@ -110,21 +123,26 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   vector<string> names_splitted;
   boost::split(names_splitted, scopedName, boost::is_any_of("::"));
   names_splitted.erase(std::remove_if(begin(names_splitted), end(names_splitted),
-                            [](const string& name)
-                            { return name.size() == 0; }), end(names_splitted));
+                                      [](const string &name)
+                                      { return name.size() == 0; }),
+                       end(names_splitted));
   std::string rootModelName = names_splitted.front(); // The first element is the name of the root model
 
   // the second to the last name is the model name
   const std::string parentSensorModelName = names_splitted.rbegin()[1];
 
   // get lidar topic name
-  if(_sdf->HasElement("topic")) {
+  if (_sdf->HasElement("topic"))
+  {
     lidar_topic_ = parentSensor_->Topic();
-  } else {
+  }
+  else
+  {
     // if not set by parameter, get the topic name from the model name
     lidar_topic_ = parentSensorModelName;
     gzwarn << "[gazebo_lidar_plugin]: " + names_splitted.front() + "::" + names_splitted.rbegin()[1] +
-      " using lidar topic \"" << parentSensorModelName << "\"\n";
+                  " using lidar topic \""
+           << parentSensorModelName << "\"\n";
   }
 
   // Calculate parent sensor rotation WRT `base_link`
@@ -138,6 +156,7 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 
   // start lidar topic publishing
   lidar_pub_ = node_handle_->Advertise<sensor_msgs::msgs::Range>("~/" + names_splitted[0] + "/link/" + lidar_topic_, 10);
+  std::string test = "~/" + names_splitted[0] + "/link/" + lidar_topic_;
 }
 
 /////////////////////////////////////////////////
@@ -158,15 +177,19 @@ void LidarPlugin::OnNewLaserScans()
   double current_distance = parentSensor_->Range(0);
 
   // set distance to min/max if actual value is smaller/bigger
-  if (simulate_fog_ && current_distance > 2.0f) {
+  if (simulate_fog_ && current_distance > 2.0f)
+  {
     double whiteNoise = ignition::math::Rand::DblNormal(0.0f, 0.1f);
     current_distance = 2.0f + whiteNoise;
-  } else if (current_distance < min_distance_ || std::isinf(current_distance)) {
+  }
+  else if (current_distance < min_distance_ || std::isinf(current_distance))
+  {
     current_distance = min_distance_;
-  } else if (current_distance > max_distance_) {
+  }
+  else if (current_distance > max_distance_)
+  {
     current_distance = max_distance_;
   }
-
 
   lidar_message_.set_current_distance(current_distance);
   lidar_message_.set_h_fov(kDefaultFOV);
@@ -181,9 +204,11 @@ void LidarPlugin::OnNewLaserScans()
   // The signal quality is normalized between 1 and 100 using the absolute
   // signal strength (DISTANCE_SENSOR signal_quality value of 0 means invalid)
   uint8_t signal_quality = 1;
-  if (signal_strength > low_signal_strength_) {
+  if (signal_strength > low_signal_strength_)
+  {
     signal_quality = static_cast<uint8_t>(99 * ((high_signal_strength_ - signal_strength) /
-            (high_signal_strength_ - low_signal_strength_)) + 1);
+                                                (high_signal_strength_ - low_signal_strength_)) +
+                                          1);
   }
 
   lidar_message_.set_signal_quality(signal_quality);
