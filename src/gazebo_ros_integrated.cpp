@@ -243,10 +243,8 @@ void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
     // send message
     opticalFlow_pub_->Publish(opticalFlow_message);
 
-    int_msg_.imu.orientation.x = 1.1;
-    int_msg_.alt.range = alt_msg.current_distance();
-
-    // ROS_INFO("current dis: %f", int_msg_.alt.range);
+    int_msg_.opt.integrated_x = opticalFlow_message.integrated_x();
+    int_msg_.opt.integrated_y = opticalFlow_message.integrated_y();
 
     this->pub_.publish(this->int_msg_);
   }
@@ -274,11 +272,23 @@ void IntegratedPlugin::ImuCallback(ConstIMUPtr &_imu)
     opticalFlow_rate += px4flow_gyro * (dt_us / 1000000.0f);
     last_dt_us = now_us;
   }
+
+  int_msg_.imu.orientation.x = _imu->orientation().x();
+  int_msg_.imu.orientation.y = _imu->orientation().y();
+  int_msg_.imu.orientation.z = _imu->orientation().z();
+  int_msg_.imu.orientation.w = _imu->orientation().w();
+  int_msg_.imu.angular_velocity.x = _imu->angular_velocity().x();
+  int_msg_.imu.angular_velocity.y = _imu->angular_velocity().y();
+  int_msg_.imu.angular_velocity.z = _imu->angular_velocity().z();
+  int_msg_.imu.linear_acceleration.x = _imu->linear_acceleration().x();
+  int_msg_.imu.linear_acceleration.y = _imu->linear_acceleration().y();
+  int_msg_.imu.linear_acceleration.z = _imu->linear_acceleration().z();
 }
 
 /* vim: set et fenc=utf-8 ff=unix sts=0 sw=2 ts=2 : */
 
 void IntegratedPlugin::AltCallback(const boost::shared_ptr<const sensor_msgs::msgs::Range> &_alt)
 {
-  alt_msg.set_current_distance(_alt->current_distance());
+  // alt_msg.set_current_distance(_alt->current_distance());
+  int_msg_.alt.range = _alt->current_distance();
 }
