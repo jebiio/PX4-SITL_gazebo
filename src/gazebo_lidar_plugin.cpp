@@ -120,6 +120,7 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 
   // Get the root model name
   const string scopedName = _parent->ParentName();
+
   vector<string> names_splitted;
   boost::split(names_splitted, scopedName, boost::is_any_of("::"));
   names_splitted.erase(std::remove_if(begin(names_splitted), end(names_splitted),
@@ -139,10 +140,11 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   else
   {
     // if not set by parameter, get the topic name from the model name
-    lidar_topic_ = parentSensorModelName;
+    lidar_topic_ = "/gazebo_alt";
     gzwarn << "[gazebo_lidar_plugin]: " + names_splitted.front() + "::" + names_splitted.rbegin()[1] +
                   " using lidar topic \""
-           << parentSensorModelName << "\"\n";
+           << "/gazebo_alt"
+           << "\"\n";
   }
 
   // Calculate parent sensor rotation WRT `base_link`
@@ -155,8 +157,8 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   orientation_.set_w(q_ls.W());
 
   // start lidar topic publishing
-  lidar_pub_ = node_handle_->Advertise<sensor_msgs::msgs::Range>("~/" + names_splitted[0] + "/link/" + lidar_topic_, 10);
-  std::string test = "~/" + names_splitted[0] + "/link/" + lidar_topic_;
+  lidar_pub_ = node_handle_->Advertise<sensor_msgs::msgs::Range>(lidar_topic_, 10);
+  // /gazebo/default/iris/link/iris
 }
 
 /////////////////////////////////////////////////
