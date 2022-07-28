@@ -61,7 +61,7 @@
             <stddev>0.007</stddev>
           </noise>
         </camera>
-        <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">
+        <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera_subak.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>0.0</updateRate>
           <cameraName>stereo</cameraName>
