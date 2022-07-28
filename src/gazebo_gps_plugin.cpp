@@ -162,6 +162,7 @@ namespace gazebo
     }
     else if (_sdf->HasElement("homeAltitude"))
     {
+
       getSdfParam<double>(_sdf, "homeAltitude", alt_home_, alt_home_);
     }
 
@@ -280,7 +281,7 @@ namespace gazebo
 
     gravity_W_ = world_->Gravity();
 
-    gps_pub_ = node_handle_->Advertise<sensor_msgs::msgs::SITLGps>("~/" + rootModelName + "/lik/" + gps_topic_, 10);
+    gps_pub_ = node_handle_->Advertise<sensor_msgs::msgs::SITLGps>("~/" + rootModelName + "/link/" + gps_topic_, 10);
 
     if (!ros::isInitialized())
     {
