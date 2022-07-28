@@ -36,6 +36,7 @@
 #include <common.h>
 
 #include <Range.pb.h>
+#include <Groundtruth.pb.h>
 
 namespace gazebo
 {
@@ -65,6 +66,10 @@ namespace gazebo
   public:
     void Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf);
 
+    /// \brief groundtruth callback
+  public:
+    void GTCallback(const boost::shared_ptr<const sensor_msgs::msgs::Groundtruth> &msg);
+
     /// \brief Pointer to parent
   protected:
     physics::WorldPtr world_;
@@ -72,15 +77,17 @@ namespace gazebo
     /// \brief The parent sensor
   private:
     sensors::RaySensorPtr parentSensor_;
-    std::string lidar_topic_;
+    std::string lidar_topic_, gt_topic_;
     transport::NodePtr node_handle_;
     transport::PublisherPtr lidar_pub_;
+    transport::SubscriberPtr gt_sub_;
     std::string namespace_;
     double min_distance_;
     double max_distance_;
     double low_signal_strength_;
     double high_signal_strength_;
     bool simulate_fog_;
+    bool isGTSource_;
 
     gazebo::msgs::Quaternion orientation_;
 
@@ -88,6 +95,7 @@ namespace gazebo
   private:
     event::ConnectionPtr newLaserScansConnection_;
     sensor_msgs::msgs::Range lidar_message_;
+    sensor_msgs::msgs::Groundtruth gt_message_;
   };
 }
 #endif

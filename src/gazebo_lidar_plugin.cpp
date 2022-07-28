@@ -109,6 +109,17 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
     max_distance_ = kDefaultMaxDistance;
   }
 
+  if (_sdf->HasElement("groundtruth"))
+  {
+    isGTSource_ = _sdf->GetElement("groundtruth")->Get<bool>();
+  }
+  else
+  {
+    gzwarn << "[gazebo_lidar_plugin] Using default groundtruth source: false "
+           << "\n";
+    isGTSource_ = false;
+  }
+
   // Set high and low signal strength
   // The considered relationship of distance to returned signal strength is an
   // inverse square.
@@ -159,6 +170,12 @@ void LidarPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   // start lidar topic publishing
   lidar_pub_ = node_handle_->Advertise<sensor_msgs::msgs::Range>(lidar_topic_, 10);
   // /gazebo/default/iris/link/iris
+
+  if (isGTSource_ == true)
+  {
+    gt_topic_ = "~/" + rootModelName + "/groundtruth";
+    gt_sub_ = node_handle_->Subscribe(gt_topic_, &LidarPlugin::GTCallback, this);
+  }
 }
 
 /////////////////////////////////////////////////
@@ -193,7 +210,11 @@ void LidarPlugin::OnNewLaserScans()
     current_distance = max_distance_;
   }
 
-  lidar_message_.set_current_distance(current_distance);
+  if (isGTSource_)
+    lidar_message_.set_current_distance(gt_message_.altitude());
+  else
+    lidar_message_.set_current_distance(current_distance);
+
   lidar_message_.set_h_fov(kDefaultFOV);
   lidar_message_.set_v_fov(kDefaultFOV);
   lidar_message_.set_allocated_orientation(new gazebo::msgs::Quaternion(orientation_));
@@ -216,4 +237,9 @@ void LidarPlugin::OnNewLaserScans()
   lidar_message_.set_signal_quality(signal_quality);
 
   lidar_pub_->Publish(lidar_message_);
+}
+
+void LidarPlugin::GTCallback(const boost::shared_ptr<const sensor_msgs::msgs::Groundtruth> &msg)
+{
+  gt_message_.set_altitude(msg->altitude());
 }

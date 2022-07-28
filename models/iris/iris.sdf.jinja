@@ -52,7 +52,7 @@
       <gravity>1</gravity>
       <velocity_decay/>
     </link>
-    <link name='/imu_link'>
+    <link name='imu_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -67,8 +67,8 @@
         </inertia>
       </inertial>
     </link>
-    <joint name='/imu_joint' type='revolute'>
-      <child>/imu_link</child>
+    <joint name='imu_joint' type='revolute'>
+      <child>imu_link</child>
       <parent>base_link</parent>
       <axis>
         <xyz>1 0 0</xyz>
@@ -418,7 +418,7 @@
       <motorSpeedPubTopic>/motor_speed/3</motorSpeedPubTopic>
       <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
     </plugin>
-    <link name='/lidar_link'>
+    <link name='lidar_link'>
       <pose>0 0 0.06 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -479,7 +479,7 @@
       </sensor>
     </link>
     <joint name='lidar_joint' type='fixed'>
-      <child>/lidar_link</child>
+      <child>lidar_link</child>
       <parent>base_link</parent>
     </joint>
     <include>
@@ -627,10 +627,9 @@
         </channel>
       </control_channels>
     </plugin>
-    <static>0</static>
     <plugin name='rotors_gazebo_imu_plugin' filename='libgazebo_imu_plugin.so'>
       <robotNamespace/>
-      <linkName>/imu_link</linkName>
+      <linkName>imu_link</linkName>
       <imuTopic>/imu</imuTopic>
       <gyroscopeNoiseDensity>0.00018665</gyroscopeNoiseDensity>
       <gyroscopeRandomWalk>3.8785e-05</gyroscopeRandomWalk>
@@ -643,7 +642,7 @@
     </plugin>
     <plugin name='gazebo_ros_imu' filename='libgazebo_ros_imu.so'>
       <robotNamespace/>
-      <bodyName>/imu_link</bodyName>
+      <bodyName>imu_link</bodyName>
       <topicName>/gazebo_ros_imu</topicName>
     </plugin>
     <include>
@@ -661,7 +660,7 @@
         </limit>
       </axis>
     </joint>
-    <link name='/alt_link'>
+    <link name='alt_link'>
       <pose>0 0 -0.06 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -715,6 +714,7 @@
           <min_distance>0.2</min_distance>
           <max_distance>15.0</max_distance>
           <topicName>/gazebo_alt</topicName>
+          <groundtruth>false</groundtruth>
         </plugin>
         <always_on>1</always_on>
         <update_rate>20</update_rate>
@@ -722,7 +722,7 @@
       </sensor>
     </link>
     <joint name='alt_joint' type='fixed'>
-      <child>/alt_link</child>
+      <child>alt_link</child>
       <parent>base_link</parent>
     </joint>
     <plugin name='gazebo_ros_p3d' filename='libgazebo_ros_p3d.so'>
@@ -745,5 +745,21 @@
         </limit>
       </axis>
     </joint>
+    <include>
+      <uri>model://stereo_camera</uri>
+      <pose>0.1 0 0 0 0 0</pose>
+    </include>
+        <joint name="stereo_camera_joint" type="revolute">
+      <child>stereo_camera::link</child>
+      <parent>iris::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+    <static>0</static>
   </model>
 </sdf>
