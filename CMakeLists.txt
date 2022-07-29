@@ -375,6 +375,7 @@ add_library(gazebo_airship_dynamics_plugin SHARED src/gazebo_airship_dynamics_pl
 add_library(gazebo_drop_plugin SHARED src/gazebo_drop_plugin.cpp)
 add_library(gazebo_ros_integrated SHARED src/gazebo_ros_integrated.cpp)
 add_library(gazebo_ros_multicamera_subak SHARED src/gazebo_ros_multicamera.cpp)
+add_library(RealSensePlugin SHARED src/RealSensePlugin.cpp)
 
 
 set(plugins
@@ -405,6 +406,7 @@ set(plugins
   gazebo_drop_plugin
   gazebo_ros_integrated
   gazebo_ros_multicamera_subak
+  RealSensePlugin
   )
 
 foreach(plugin ${plugins})
