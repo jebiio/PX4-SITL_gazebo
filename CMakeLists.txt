@@ -1,3 +1,4 @@
+# for gazebo_ros_multicamera
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
@@ -375,7 +376,9 @@ add_library(gazebo_airship_dynamics_plugin SHARED src/gazebo_airship_dynamics_pl
 add_library(gazebo_drop_plugin SHARED src/gazebo_drop_plugin.cpp)
 add_library(gazebo_ros_integrated SHARED src/gazebo_ros_integrated.cpp)
 add_library(gazebo_ros_multicamera_subak SHARED src/gazebo_ros_multicamera.cpp)
-add_library(RealSensePlugin SHARED src/RealSensePlugin.cpp)
+add_library(gazebo_ros_camera_utils_subak SHARED src/gazebo_ros_camera_utils.cpp)
+add_library(MultiCameraPlugin_subak SHARED src/MultiCameraPlugin.cpp)
+
 
 
 set(plugins
@@ -406,7 +409,8 @@ set(plugins
   gazebo_drop_plugin
   gazebo_ros_integrated
   gazebo_ros_multicamera_subak
-  RealSensePlugin
+  gazebo_ros_camera_utils_subak
+  MultiCameraPlugin_subak
   )
 
 foreach(plugin ${plugins})
@@ -414,6 +418,10 @@ foreach(plugin ${plugins})
 endforeach()
 target_link_libraries(gazebo_opticalflow_plugin ${OpticalFlow_LIBS})
 target_link_libraries(gazebo_ros_integrated ${OpticalFlow_LIBS})
+target_link_libraries(gazebo_ros_camera_utils_subak ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
+target_link_libraries(MultiCameraPlugin_subak ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
+target_link_libraries(gazebo_ros_multicamera_subak gazebo_ros_camera_utils_subak MultiCameraPlugin_subak ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
+
 
 
 # If BUILD_ROS_PLUGINS set to ON, build plugins that have ROS dependencies
@@ -435,6 +443,7 @@ if (BUILD_ROS_PLUGINS)
     ${roscpp_LIBRARIES}
     ${GAZEBO_libraries}
   )
+
 endif()
 
 if (GSTREAMER_FOUND)
