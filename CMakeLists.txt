@@ -378,6 +378,7 @@ add_library(gazebo_ros_integrated SHARED src/gazebo_ros_integrated.cpp)
 add_library(gazebo_ros_multicamera_subak SHARED src/gazebo_ros_multicamera.cpp)
 add_library(gazebo_ros_camera_utils_subak SHARED src/gazebo_ros_camera_utils.cpp)
 add_library(MultiCameraPlugin_subak SHARED src/MultiCameraPlugin.cpp)
+add_library(RealSensePlugin SHARED src/RealSensePlugin.cpp)
 
 
 
@@ -411,6 +412,7 @@ set(plugins
   gazebo_ros_multicamera_subak
   gazebo_ros_camera_utils_subak
   MultiCameraPlugin_subak
+  RealSensePlugin
   )
 
 foreach(plugin ${plugins})
