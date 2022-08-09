@@ -64,13 +64,17 @@ namespace gazebo
     /// ImageStamped message.
     public:
     virtual void OnNewFrame(const rendering::CameraPtr cam,
-                            const transport::PublisherPtr pub) const;
+                            const transport::PublisherPtr pub,
+                            ros::Publisher rosPub) const;
 
     /// \brief Private data pointer.
     private: std::unique_ptr<RealSensePluginPrivate> dataPtr;
 
     private: ros::NodeHandle *rosnode_;
-    private: ros::Publisher pub_;
+    private: ros::Publisher depthPub_;
+    private: ros::Publisher ired1Pub_;
+    private: ros::Publisher ired2Pub_;
+    private: ros::Publisher colorPub_;
     // protected: sensor_msgs::Image realsense_msg;
   };
 }

@@ -19,6 +19,7 @@
 #include <gazebo/rendering/DepthCamera.hh>
 #include <gazebo/sensors/sensors.hh>
 #include <sstream>
+#include <sensor_msgs/fill_image.h>
 
 #define DEPTH_PUB_FREQ_HZ 60
 #define COLOR_PUB_FREQ_HZ 60
@@ -210,30 +211,6 @@ void RealSensePlugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/)
   this->dataPtr->colorPub =
       this->dataPtr->transportNode->Advertise<msgs::ImageStamped>(
           rsTopicRoot + COLOR_CAMERA_TOPIC, 1, DEPTH_PUB_FREQ_HZ);
-
-  // Listen to depth camera new frame event
-  this->dataPtr->newDepthFrameConn = this->dataPtr->depthCam->ConnectNewDepthFrame(
-      std::bind(&RealSensePlugin::OnNewDepthFrame, this));
-
-  this->dataPtr->newIred1FrameConn =
-      this->dataPtr->ired1Cam->ConnectNewImageFrame(
-          std::bind(&RealSensePlugin::OnNewFrame, this, this->dataPtr->ired1Cam,
-                    this->dataPtr->ired1Pub));
-
-  this->dataPtr->newIred2FrameConn =
-      this->dataPtr->ired2Cam->ConnectNewImageFrame(
-          std::bind(&RealSensePlugin::OnNewFrame, this, this->dataPtr->ired2Cam,
-                    this->dataPtr->ired2Pub));
-
-  this->dataPtr->newColorFrameConn =
-      this->dataPtr->colorCam->ConnectNewImageFrame(
-          std::bind(&RealSensePlugin::OnNewFrame, this, this->dataPtr->colorCam,
-                    this->dataPtr->colorPub));
-
-  // Listen to the update event
-  this->dataPtr->updateConnection = event::Events::ConnectWorldUpdateBegin(
-      boost::bind(&RealSensePlugin::OnUpdate, this));
-
   if (!ros::isInitialized())
   {
     ROS_FATAL_STREAM_NAMED("imu", "A ROS node for Gazebo has not been initialized, unable to load plugin. "
@@ -243,13 +220,41 @@ void RealSensePlugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/)
 
   this->rosnode_ = new ros::NodeHandle("realsense");
 
-  this->pub_ = this->rosnode_->advertise<sensor_msgs::Image>("/realsense", 1);
+  this->depthPub_ = this->rosnode_->advertise<sensor_msgs::Image>("/realsense/" DEPTH_CAMERA_NAME, 1);
+  this->ired1Pub_ = this->rosnode_->advertise<sensor_msgs::Image>("/realsense/" IRED1_CAMERA_NAME, 1);
+  this->ired2Pub_ = this->rosnode_->advertise<sensor_msgs::Image>("/realsense/" IRED2_CAMERA_NAME, 1);
+  this->colorPub_ = this->rosnode_->advertise<sensor_msgs::Image>("/realsense/" COLOR_CAMERA_NAME, 1);
+  // Listen to depth camera new frame event
+  this->dataPtr->newDepthFrameConn = this->dataPtr->depthCam->ConnectNewDepthFrame(
+      std::bind(&RealSensePlugin::OnNewDepthFrame, this));
+
+  this->dataPtr->newIred1FrameConn =
+      this->dataPtr->ired1Cam->ConnectNewImageFrame(
+          std::bind(&RealSensePlugin::OnNewFrame, this, this->dataPtr->ired1Cam,
+                    this->dataPtr->ired1Pub, this->ired1Pub_));
+
+  this->dataPtr->newIred2FrameConn =
+      this->dataPtr->ired2Cam->ConnectNewImageFrame(
+          std::bind(&RealSensePlugin::OnNewFrame, this, this->dataPtr->ired2Cam,
+                    this->dataPtr->ired2Pub, this->ired2Pub_));
+
+  this->dataPtr->newColorFrameConn =
+      this->dataPtr->colorCam->ConnectNewImageFrame(
+          std::bind(&RealSensePlugin::OnNewFrame, this, this->dataPtr->colorCam,
+                    this->dataPtr->colorPub, this->colorPub_));
+
+  // Listen to the update event
+  this->dataPtr->updateConnection = event::Events::ConnectWorldUpdateBegin(
+      boost::bind(&RealSensePlugin::OnUpdate, this));
+
+
 
 }
 
 /////////////////////////////////////////////////
 void RealSensePlugin::OnNewFrame(const rendering::CameraPtr cam,
-                                 const transport::PublisherPtr pub) const
+                                 const transport::PublisherPtr pub,
+                                 ros::Publisher rosPub) const
 {
   msgs::ImageStamped msg;
 
@@ -272,7 +277,7 @@ void RealSensePlugin::OnNewFrame(const rendering::CameraPtr cam,
 
   // Publish realsense infrared stream
   pub->Publish(msg);
-  // ROS_INFO_NAMED("motor model", "Realsense model called onUpdate!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  // ROS_INFO_NAMED("OnNewFrame", "Realsense  OnNewFrame!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
   // ros strin msg 테스트
   // std_msgs::String testMsg;
@@ -283,11 +288,21 @@ void RealSensePlugin::OnNewFrame(const rendering::CameraPtr cam,
 
   sensor_msgs::Image realsense_msg;
 
-  realsense_msg.height = 2;
-  realsense_msg.width = 2;
+  common::Time now = this->dataPtr->world->SimTime();
+  realsense_msg.header.stamp.sec = now.sec;
+  realsense_msg.header.stamp.nsec = now.nsec;
 
 
-  pub_.publish(realsense_msg);
+  const std::map<std::string, std::string> supported_image_encodings = {
+      {"RGB_INT8", sensor_msgs::image_encodings::RGB8},
+      {"L_INT8", sensor_msgs::image_encodings::TYPE_8UC1}};
+  const auto pixel_format = supported_image_encodings.at(cam->ImageFormat());
+
+  fillImage(realsense_msg, pixel_format, cam->ImageHeight(),
+            cam->ImageWidth(), cam->ImageDepth() * cam->ImageWidth(),
+            reinterpret_cast<const void *>(cam->ImageData()));
+
+  rosPub.publish(realsense_msg);
 
 }
 
@@ -348,6 +363,8 @@ void RealSensePlugin::OnNewDepthFrame() const
 
   // Publish realsense scaled depth map
   this->dataPtr->depthPub->Publish(msg);
+  // ROS_INFO_NAMED("OnNewDepthFrame", "Realsense  OnNewDepthFrame!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
 }
 
 /////////////////////////////////////////////////
