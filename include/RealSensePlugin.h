@@ -24,58 +24,119 @@
 #include <gazebo/rendering/DepthCamera.hh>
 #include <gazebo/sensors/sensors.hh>
 #include <sdf/sdf.hh>
-#include <ros/ros.h>
+
+#include <memory>
 #include <string>
-#include <std_msgs/String.h>
-#include <sensor_msgs/Image.h>
-
-
 
 namespace gazebo
 {
-  // Forward declare private data class
-  struct RealSensePluginPrivate;
+#define DEPTH_CAMERA_NAME "depth"
+#define COLOR_CAMERA_NAME "color"
+#define IRED1_CAMERA_NAME "ired1"
+#define IRED2_CAMERA_NAME "ired2"
+
+  struct CameraParams
+  {
+    CameraParams() {}
+
+    std::string topic_name;
+    std::string camera_info_topic_name;
+    std::string optical_frame;
+  };
 
   /// \brief A plugin that simulates Real Sense camera streams.
-  class GAZEBO_VISIBLE RealSensePlugin : public ModelPlugin
+  class RealSensePlugin : public ModelPlugin
   {
     /// \brief Constructor.
-    public:
+  public:
     RealSensePlugin();
 
     /// \brief Destructor.
-    public:
     ~RealSensePlugin();
 
     // Documentation Inherited.
-    public:
     virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 
     /// \brief Callback for the World Update event.
-    public:
     void OnUpdate();
 
     /// \brief Callback that publishes a received Depth Camera Frame as an
-    /// ImageStamped message.
-    public:
-    virtual void OnNewDepthFrame() const;
+    /// ImageStamped
+    /// message.
+    virtual void OnNewDepthFrame();
 
     /// \brief Callback that publishes a received Camera Frame as an
     /// ImageStamped message.
-    public:
     virtual void OnNewFrame(const rendering::CameraPtr cam,
-                            const transport::PublisherPtr pub,
-                            ros::Publisher rosPub) const;
+                            const transport::PublisherPtr pub);
 
-    /// \brief Private data pointer.
-    private: std::unique_ptr<RealSensePluginPrivate> dataPtr;
+  protected:
+    /// \brief Pointer to the model containing the plugin.
+    physics::ModelPtr rsModel;
 
-    private: ros::NodeHandle *rosnode_;
-    private: ros::Publisher depthPub_;
-    private: ros::Publisher ired1Pub_;
-    private: ros::Publisher ired2Pub_;
-    private: ros::Publisher colorPub_;
-    // protected: sensor_msgs::Image realsense_msg;
+    /// \brief Pointer to the world.
+    physics::WorldPtr world;
+
+    /// \brief Pointer to the Depth Camera Renderer.
+    rendering::DepthCameraPtr depthCam;
+
+    /// \brief Pointer to the Color Camera Renderer.
+    rendering::CameraPtr colorCam;
+
+    /// \brief Pointer to the Infrared Camera Renderer.
+    rendering::CameraPtr ired1Cam;
+
+    /// \brief Pointer to the Infrared2 Camera Renderer.
+    rendering::CameraPtr ired2Cam;
+
+    /// \brief String to hold the camera prefix
+    std::string prefix;
+
+    /// \brief Pointer to the transport Node.
+    transport::NodePtr transportNode;
+
+    // \brief Store Real Sense depth map data.
+    std::vector<uint16_t> depthMap;
+
+    /// \brief Pointer to the Depth Publisher.
+    transport::PublisherPtr depthPub;
+
+    /// \brief Pointer to the Color Publisher.
+    transport::PublisherPtr colorPub;
+
+    /// \brief Pointer to the Infrared Publisher.
+    transport::PublisherPtr ired1Pub;
+
+    /// \brief Pointer to the Infrared2 Publisher.
+    transport::PublisherPtr ired2Pub;
+
+    /// \brief Pointer to the Depth Camera callback connection.
+    event::ConnectionPtr newDepthFrameConn;
+
+    /// \brief Pointer to the Depth Camera callback connection.
+    event::ConnectionPtr newIred1FrameConn;
+
+    /// \brief Pointer to the Infrared Camera callback connection.
+    event::ConnectionPtr newIred2FrameConn;
+
+    /// \brief Pointer to the Color Camera callback connection.
+    event::ConnectionPtr newColorFrameConn;
+
+    /// \brief Pointer to the World Update event connection.
+    event::ConnectionPtr updateConnection;
+
+    std::map<std::string, CameraParams> cameraParamsMap_;
+
+    bool pointCloud_ = false;
+    std::string pointCloudTopic_;
+    double pointCloudCutOff_, pointCloudCutOffMax_;
+
+    double colorUpdateRate_;
+    double infraredUpdateRate_;
+    double depthUpdateRate_;
+
+    float rangeMinDepth_;
+    float rangeMaxDepth_;
   };
 }
 #endif

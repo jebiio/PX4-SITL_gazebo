@@ -379,6 +379,7 @@ add_library(gazebo_ros_multicamera_subak SHARED src/gazebo_ros_multicamera.cpp)
 add_library(gazebo_ros_camera_utils_subak SHARED src/gazebo_ros_camera_utils.cpp)
 add_library(MultiCameraPlugin_subak SHARED src/MultiCameraPlugin.cpp)
 add_library(RealSensePlugin SHARED src/RealSensePlugin.cpp)
+add_library(gazebo_ros_realsense SHARED src/gazebo_ros_realsense.cpp)
 
 
 
@@ -413,6 +414,7 @@ set(plugins
   gazebo_ros_camera_utils_subak
   MultiCameraPlugin_subak
   RealSensePlugin
+  gazebo_ros_realsense
   )
 
 foreach(plugin ${plugins})
@@ -423,6 +425,8 @@ target_link_libraries(gazebo_ros_integrated ${OpticalFlow_LIBS})
 target_link_libraries(gazebo_ros_camera_utils_subak ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
 target_link_libraries(MultiCameraPlugin_subak ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
 target_link_libraries(gazebo_ros_multicamera_subak gazebo_ros_camera_utils_subak MultiCameraPlugin_subak ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
+target_link_libraries(RealSensePlugin ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
+target_link_libraries(gazebo_ros_realsense RealSensePlugin ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
 
 
 
