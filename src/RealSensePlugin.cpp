@@ -144,7 +144,7 @@ void RealSensePlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     rangeMinDepth_ = _sdf->Get<double>("rangeMaxDepth");
 
   if (!_sdf->HasElement("pointCloud"))
-    pointCloud_ = false;
+    pointCloud_ = true;
   else
     pointCloud_ = _sdf->Get<bool>("pointCloud");
 
