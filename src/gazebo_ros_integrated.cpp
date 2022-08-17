@@ -221,11 +221,23 @@ void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
     opticalFlow_message.set_integration_time_us(quality ? dt_us_ : 0);
     opticalFlow_message.set_integrated_x(quality ? flow_x_ang : 0.0f);
     opticalFlow_message.set_integrated_y(quality ? flow_y_ang : 0.0f);
+
+    int_msg_.opt.time_usec = now.Double() * 1e6;
+    int_msg_.opt.sensor_id = 2.0;
+    int_msg_.opt.integration_time_us = quality ? dt_us_ : 0;
+    int_msg_.opt.integrated_x = quality ? flow_x_ang : 0.0f;
+    int_msg_.opt.integrated_y = quality ? flow_y_ang : 0.0f;
+
     if (has_gyro_)
     {
       opticalFlow_message.set_integrated_xgyro(opticalFlow_rate.X());
       opticalFlow_message.set_integrated_ygyro(opticalFlow_rate.Y());
       opticalFlow_message.set_integrated_zgyro(opticalFlow_rate.Z());
+
+      int_msg_.opt.integrated_xgyro = opticalFlow_rate.X();
+      int_msg_.opt.integrated_ygyro = opticalFlow_rate.Y();
+      int_msg_.opt.integrated_zgyro = opticalFlow_rate.Z();
+
       // reset gyro integral
       opticalFlow_rate.Set();
     }
@@ -235,6 +247,10 @@ void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
       opticalFlow_message.set_integrated_xgyro(NAN);
       opticalFlow_message.set_integrated_ygyro(NAN);
       opticalFlow_message.set_integrated_zgyro(NAN);
+
+      int_msg_.opt.integrated_xgyro = NAN;
+      int_msg_.opt.integrated_ygyro = NAN;
+      int_msg_.opt.integrated_zgyro = NAN;
     }
     opticalFlow_message.set_temperature(20.0f);
     opticalFlow_message.set_quality(quality);
@@ -243,9 +259,9 @@ void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
     // send message
     opticalFlow_pub_->Publish(opticalFlow_message);
 
-    int_msg_.opt.integrated_x = opticalFlow_message.integrated_x();
-    int_msg_.opt.integrated_y = opticalFlow_message.integrated_y();
-
+    int_msg_.opt.quality = quality;
+    int_msg_.opt.time_delta_distance_us = 0;
+    int_msg_.opt.distance = 0.0f;
     this->pub_.publish(this->int_msg_);
   }
 }
