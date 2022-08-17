@@ -761,5 +761,13 @@
       </axis>
     </joint>
     <static>0</static>
+    <include>
+      <uri>model://px4flow</uri>
+      <pose>0.05 0 -0.05 0 0 0</pose>
+    </include>
+    <joint name="px4flow_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>px4flow::link</child>
+    </joint>
   </model>
 </sdf>
