@@ -105,6 +105,7 @@ namespace gazebo
     double first_frame_time_;
     uint32_t frame_time_us_;
     bool has_gyro_;
+    double prev_time;
 
     std::string alt_sub_topic_;
     transport::SubscriberPtr altSub_;

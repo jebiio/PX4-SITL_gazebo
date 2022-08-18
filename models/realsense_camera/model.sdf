@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <sdf version="1.6">
   <model name="realsense_camera">
-    <plugin name="realsense_plugin" filename="libgazebo_ros_realsense.so"/>
+    <plugin name="realsense_plugin" filename="libgazebo_ros_realsense.so" />
     <pose>0 0 0.015 0 0 0</pose>
     <link name="link">
       <inertial>
@@ -92,7 +92,7 @@
           </noise>
         </camera>
         <always_on>1</always_on>
-        <update_rate>60</update_rate>
+        <update_rate>10</update_rate>
         <visualize>1</visualize>
       </sensor>
       <sensor name="ired1" type="camera">
@@ -115,7 +115,7 @@
           </noise>
         </camera>
         <always_on>1</always_on>
-        <update_rate>60</update_rate>
+        <update_rate>10</update_rate>
         <visualize>0</visualize>
       </sensor>
       <sensor name="ired2" type="camera">
@@ -138,7 +138,7 @@
           </noise>
         </camera>
         <always_on>1</always_on>
-        <update_rate>60</update_rate>
+        <update_rate>10</update_rate>
         <visualize>0</visualize>
       </sensor>
       <sensor name="depth" type="depth">
@@ -160,7 +160,7 @@
           </noise>
         </camera>
         <always_on>1</always_on>
-        <update_rate>60</update_rate>
+        <update_rate>10</update_rate>
         <visualize>0</visualize>
       </sensor>
     </link>

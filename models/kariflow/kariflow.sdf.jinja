@@ -45,7 +45,7 @@
       <sensor name="kariflow" type="imu">
         <pose>0 0 0 0 -{{ 90*deg2rad }} {{ 180*deg2rad }}</pose>
         <always_on>1</always_on>
-        <update_rate>200</update_rate>
+        <update_rate>50</update_rate>
       </sensor>
 
       <!-- Sonar: HRLV EZ4-->
@@ -64,7 +64,6 @@
       <!--752x480 MT9V034 image sensor, only 64x64 pixels used-->
       <sensor name="kariflow" type="camera">
         <always_on>true</always_on>
-        <update_rate>100</update_rate>
         <visualize>true</visualize>
         <topic>/kariflow</topic>
         <camera>
@@ -90,7 +89,7 @@
         </camera>
         <plugin name="kariflow_plugin" filename="libgazebo_ros_integrated.so">
             <robotNamespace></robotNamespace>
-            <outputRate>20</outputRate>
+            <outputRate>100</outputRate>
             <hasGyro>true</hasGyro>
             <gyroTopic>/kariflow/imu</gyroTopic>
         </plugin>
