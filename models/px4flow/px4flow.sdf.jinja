@@ -64,7 +64,7 @@
       <!--752x480 MT9V034 image sensor, only 64x64 pixels used-->
       <sensor name="px4flow" type="camera">
         <always_on>true</always_on>
-        <update_rate>100</update_rate>
+        <update_rate>10</update_rate>
         <visualize>true</visualize>
         <topic>/px4flow</topic>
         <camera>
@@ -90,7 +90,7 @@
         </camera>
         <plugin name="px4flow_plugin" filename="libgazebo_ros_px4flow.so">
             <robotNamespace></robotNamespace>
-            <outputRate>20</outputRate>
+            <outputRate>10</outputRate>
             <hasGyro>true</hasGyro>
             <gyroTopic>/px4flow/imu</gyroTopic>
         </plugin>
