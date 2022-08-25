@@ -142,6 +142,8 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
     alt_sub_topic_ = "/gazebo_alt";
   altSub_ = node_handle_->Subscribe(alt_sub_topic_, &IntegratedPlugin::AltCallback, this);
 
+  magSub_ = node_handle_->Subscribe("/gazebo_mag", &IntegratedPlugin::MagCallback, this);
+
   string topicName = "~/" + scopedName + "/opticalFlow";
   boost::replace_all(topicName, "::", "/");
 
@@ -322,4 +324,11 @@ void IntegratedPlugin::AltCallback(const boost::shared_ptr<const sensor_msgs::ms
   // alt_msg.set_current_distance(_alt->current_distance());
   // int_msg_.alt.range = _alt->current_distance();
   int_msg_.h_mtr = _alt->current_distance();
+}
+
+void IntegratedPlugin::MagCallback(const boost::shared_ptr<const sensor_msgs::msgs::MagneticField> &_mag)
+{
+  int_msg_.mx_gauss = _mag->magnetic_field().x();
+  int_msg_.my_gauss = _mag->magnetic_field().y();
+  int_msg_.mz_gauss = _mag->magnetic_field().z();
 }

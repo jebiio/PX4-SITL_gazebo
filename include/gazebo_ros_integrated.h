@@ -50,6 +50,8 @@
 
 #include <common.h>
 
+#include <MagneticField.pb.h>
+
 #define DEFAULT_RATE 20
 #define HAS_GYRO true
 
@@ -73,6 +75,7 @@ namespace gazebo
     void ImuCallback(ConstIMUPtr &_imu);
     // void AltCallback(LidarPtr &_alt);
     void AltCallback(const boost::shared_ptr<const sensor_msgs::msgs::Range> &_alt);
+    void MagCallback(const boost::shared_ptr<const sensor_msgs::msgs::MagneticField> &_mag);
 
   protected:
     unsigned int width, height, depth;
@@ -108,7 +111,7 @@ namespace gazebo
     double prev_time;
 
     std::string alt_sub_topic_;
-    transport::SubscriberPtr altSub_;
+    transport::SubscriberPtr altSub_, magSub_;
     sensor_msgs::msgs::Range alt_msg;
   };
 }
