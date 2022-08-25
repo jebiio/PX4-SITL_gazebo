@@ -158,7 +158,7 @@ void Px4FlowPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
 
   this->rosnode_ = new ros::NodeHandle(namespace_);
 
-  this->pub_ = this->rosnode_->advertise<kari_estimator::optical_flow>("/px4flow", 1);
+  this->pub_ = this->rosnode_->advertise<kari_core::OpticalFlow>("/px4flow", 1);
 
   // init flow
   //  optical_flow_ = new OpticalFlowOpenCV(focal_length_, focal_length_, output_rate_);
@@ -205,11 +205,10 @@ void Px4FlowPlugin::OnNewFrame(const unsigned char *_image,
     opticalFlow_message.set_integrated_x(quality ? flow_x_ang : 0.0f);
     opticalFlow_message.set_integrated_y(quality ? flow_y_ang : 0.0f);
 
-    px4flow_msg_.time_usec = now.Double() * 1e6;
-    px4flow_msg_.sensor_id = 2.0;
-    px4flow_msg_.integration_time_us = quality ? dt_us_ : 0;
-    px4flow_msg_.integrated_x = quality ? flow_x_ang : 0.0f;
-    px4flow_msg_.integrated_y = quality ? flow_y_ang : 0.0f;
+    px4flow_msg_.header.stamp.sec = (int)floor(now.Double());
+    px4flow_msg_.header.stamp.nsec = (int)(now.Double() - floor(now.Double()) * 1e9);
+    px4flow_msg_.flow_x = quality ? flow_x_ang : 0.0f;
+    px4flow_msg_.flow_y = quality ? flow_y_ang : 0.0f;
 
     if (has_gyro_)
     {
@@ -217,9 +216,8 @@ void Px4FlowPlugin::OnNewFrame(const unsigned char *_image,
       opticalFlow_message.set_integrated_ygyro(opticalFlow_rate.Y());
       opticalFlow_message.set_integrated_zgyro(opticalFlow_rate.Z());
 
-      px4flow_msg_.integrated_xgyro = opticalFlow_rate.X();
-      px4flow_msg_.integrated_ygyro = opticalFlow_rate.Y();
-      px4flow_msg_.integrated_zgyro = opticalFlow_rate.Z();
+      px4flow_msg_.velocity_x = opticalFlow_rate.X();
+      px4flow_msg_.velocity_y = opticalFlow_rate.Y();
 
       // reset gyro integral
       opticalFlow_rate.Set();
@@ -231,9 +229,8 @@ void Px4FlowPlugin::OnNewFrame(const unsigned char *_image,
       opticalFlow_message.set_integrated_ygyro(NAN);
       opticalFlow_message.set_integrated_zgyro(NAN);
 
-      px4flow_msg_.integrated_xgyro = NAN;
-      px4flow_msg_.integrated_ygyro = NAN;
-      px4flow_msg_.integrated_zgyro = NAN;
+      px4flow_msg_.velocity_x = NAN;
+      px4flow_msg_.velocity_y = NAN;
     }
     opticalFlow_message.set_temperature(20.0f);
     opticalFlow_message.set_quality(quality);
@@ -242,10 +239,8 @@ void Px4FlowPlugin::OnNewFrame(const unsigned char *_image,
     // send message
     opticalFlow_pub_->Publish(opticalFlow_message);
 
-    px4flow_msg_.temperature = 20.0f;
     px4flow_msg_.quality = quality;
-    px4flow_msg_.time_delta_distance_us = 0;
-    px4flow_msg_.distance = 0.0f;
+    px4flow_msg_.ground_distance = 0.0f;
 
     this->pub_.publish(this->px4flow_msg_);
   }

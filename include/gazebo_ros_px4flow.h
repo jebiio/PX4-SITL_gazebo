@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifndef _GAZEBO_OPTICAL_FLOW_PLUGIN_HH_
 #define _GAZEBO_OPTICAL_FLOW_PLUGIN_HH_
 
@@ -40,7 +40,7 @@
 #include "flow_px4.hpp"
 
 #include <ros/ros.h>
-#include "optical_flow.h"
+#include "OpticalFlow.h"
 
 #define DEFAULT_RATE 20
 #define HAS_GYRO true
@@ -54,46 +54,46 @@ namespace gazebo
 
   class GAZEBO_VISIBLE Px4FlowPlugin : public SensorPlugin
   {
-    public:
-      Px4FlowPlugin();
-      virtual ~Px4FlowPlugin();
-      virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
-      virtual void OnNewFrame(const unsigned char *_image,
-                              unsigned int _width, unsigned int _height,
-                              unsigned int _depth, const std::string &_format);
-      void ImuCallback(ConstIMUPtr& _imu);
+  public:
+    Px4FlowPlugin();
+    virtual ~Px4FlowPlugin();
+    virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
+    virtual void OnNewFrame(const unsigned char *_image,
+                            unsigned int _width, unsigned int _height,
+                            unsigned int _depth, const std::string &_format);
+    void ImuCallback(ConstIMUPtr &_imu);
 
-    protected:
-      unsigned int width, height, depth;
-      std::string format;
-      sensors::CameraSensorPtr parentSensor;
-      rendering::CameraPtr camera;
-      physics::WorldPtr world;
+  protected:
+    unsigned int width, height, depth;
+    std::string format;
+    sensors::CameraSensorPtr parentSensor;
+    rendering::CameraPtr camera;
+    physics::WorldPtr world;
 
-    private:
-      event::ConnectionPtr newFrameConnection;
-      transport::PublisherPtr opticalFlow_pub_;
-      transport::NodePtr node_handle_;
-      transport::SubscriberPtr imuSub_;
-      sensor_msgs::msgs::OpticalFlow opticalFlow_message;
-      ignition::math::Vector3d opticalFlow_rate;
-      std::string namespace_;
-      std::string gyro_sub_topic_;
-      // OpticalFlowOpenCV *optical_flow_;
-      OpticalFlowPX4 *optical_flow_;
+  private:
+    event::ConnectionPtr newFrameConnection;
+    transport::PublisherPtr opticalFlow_pub_;
+    transport::NodePtr node_handle_;
+    transport::SubscriberPtr imuSub_;
+    sensor_msgs::msgs::OpticalFlow opticalFlow_message;
+    ignition::math::Vector3d opticalFlow_rate;
+    std::string namespace_;
+    std::string gyro_sub_topic_;
+    // OpticalFlowOpenCV *optical_flow_;
+    OpticalFlowPX4 *optical_flow_;
 
-      float hfov_;
-      int dt_us_;
-      int output_rate_;
-      float focal_length_;
-      double first_frame_time_;
-      uint32_t frame_time_us_;
-      bool has_gyro_;
+    float hfov_;
+    int dt_us_;
+    int output_rate_;
+    float focal_length_;
+    double first_frame_time_;
+    uint32_t frame_time_us_;
+    bool has_gyro_;
 
-      ros::NodeHandle *rosnode_;
-      ros::Publisher pub_;
-      std::string topic_name_;
-      kari_estimator::optical_flow px4flow_msg_;
+    ros::NodeHandle *rosnode_;
+    ros::Publisher pub_;
+    std::string topic_name_;
+    kari_core::OpticalFlow px4flow_msg_;
   };
 }
 #endif
