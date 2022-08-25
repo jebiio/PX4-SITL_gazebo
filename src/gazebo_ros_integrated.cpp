@@ -152,6 +152,10 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
   this->newFrameConnection = this->camera->ConnectNewImageFrame(
       boost::bind(&IntegratedPlugin::OnNewFrame, this, _1, this->width, this->height, this->depth, this->format));
 
+  this->updateConnection_ =
+      event::Events::ConnectWorldUpdateBegin(
+          boost::bind(&IntegratedPlugin::OnUpdate, this, _1));
+
   if (!(_sdf->HasElement("topicName")))
   {
     ROS_WARN_NAMED("gazebo_ros_integrated", "topic_name_ : /gazebo_ros_integarted");
@@ -224,12 +228,12 @@ void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
     opticalFlow_message.set_integrated_x(quality ? flow_x_ang : 0.0f);
     opticalFlow_message.set_integrated_y(quality ? flow_y_ang : 0.0f);
 
-    int_msg_.delt_sec = now.Double() - prev_time;
-    int_msg_.t_sec = now.Double();
-    prev_time = int_msg_.t_sec;
-    int_msg_.delx_rps = flow_x_ang;
-    int_msg_.dely_rps = flow_y_ang;
-    int_msg_.qual = quality;
+    int_msg_temp.delt_sec = dt_us_ / 1000000.0;
+    // int_msg_.t_sec = now.Double();
+    // prev_time = int_msg_.t_sec;
+    int_msg_temp.delx_rps = flow_x_ang;
+    int_msg_temp.dely_rps = flow_y_ang;
+    int_msg_temp.qual = quality;
 
     // int_msg_.opt.time_usec = now.Double() * 1e6;
     // int_msg_.opt.sensor_id = 2.0;
@@ -271,7 +275,8 @@ void IntegratedPlugin::OnNewFrame(const unsigned char *_image,
     // int_msg_.opt.quality = quality;
     // int_msg_.opt.time_delta_distance_us = 0;
     // int_msg_.opt.distance = 0.0f;
-    this->pub_.publish(this->int_msg_);
+    // this->pub_.publish(this->int_msg_);
+    isUpdated = true;
   }
 }
 
@@ -331,4 +336,44 @@ void IntegratedPlugin::MagCallback(const boost::shared_ptr<const sensor_msgs::ms
   int_msg_.mx_gauss = _mag->magnetic_field().x();
   int_msg_.my_gauss = _mag->magnetic_field().y();
   int_msg_.mz_gauss = _mag->magnetic_field().z();
+}
+
+void IntegratedPlugin::OnUpdate(const common::UpdateInfo &_info)
+{
+
+#if GAZEBO_MAJOR_VERSION >= 9
+  common::Time current_time = this->world->SimTime();
+#else
+  common::Time current_time = this->world->GetSimTime();
+#endif
+  //   double dt = (current_time - last_time_).Double();
+  //   last_time_ = current_time;
+  //   double t = current_time.Double();
+  if ((current_time - last_time).Double() < (1.0 / 100))
+  {
+    return;
+  }
+
+  if (isUpdated == true)
+  {
+    int_msg_.delt_sec = int_msg_temp.delt_sec;
+    int_msg_.delx_rps = int_msg_temp.delx_rps;
+    int_msg_.dely_rps = int_msg_temp.dely_rps;
+    int_msg_.qual = int_msg_temp.qual;
+    isUpdated = false;
+  }
+  else
+  {
+    int_msg_.delt_sec = 0.0;
+    int_msg_.delx_rps = 0.0;
+    int_msg_.dely_rps = 0.0;
+    int_msg_.qual = 0.0;
+  }
+
+  int_msg_.t_sec = current_time.Double();
+
+  this->pub_.publish(this->int_msg_);
+
+  last_time = current_time;
+  return;
 }

@@ -72,10 +72,12 @@ namespace gazebo
     virtual void OnNewFrame(const unsigned char *_image,
                             unsigned int _width, unsigned int _height,
                             unsigned int _depth, const std::string &_format);
+
     void ImuCallback(ConstIMUPtr &_imu);
     // void AltCallback(LidarPtr &_alt);
     void AltCallback(const boost::shared_ptr<const sensor_msgs::msgs::Range> &_alt);
     void MagCallback(const boost::shared_ptr<const sensor_msgs::msgs::MagneticField> &_mag);
+    void OnUpdate(const common::UpdateInfo &);
 
   protected:
     unsigned int width, height, depth;
@@ -99,7 +101,7 @@ namespace gazebo
     ros::NodeHandle *rosnode_;
     ros::Publisher pub_;
     std::string topic_name_;
-    kari_estimator::kari_integrated int_msg_;
+    kari_estimator::kari_integrated int_msg_, int_msg_temp;
 
     float hfov_;
     int dt_us_;
@@ -113,6 +115,9 @@ namespace gazebo
     std::string alt_sub_topic_;
     transport::SubscriberPtr altSub_, magSub_;
     sensor_msgs::msgs::Range alt_msg;
+    event::ConnectionPtr updateConnection_;
+    common::Time last_time;
+    bool isUpdated = false;
   };
 }
 #endif
