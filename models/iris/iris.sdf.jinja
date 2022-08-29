@@ -731,10 +731,6 @@
       <topicName>/gazebo_ros_groundtruth</topicName>
     </plugin>
     <include>
-      <uri>model://kariflow</uri>
-      <pose>0.05 0 -0.05 0 0 0</pose>
-    </include>
-    <include>
       <uri>model://integrated_board</uri>
       <pose>0.05 0 -0.05 0 0 0</pose>
     </include>
@@ -749,6 +745,10 @@
         </limit>
       </axis>
     </joint>
+    <include>
+      <uri>model://realsense_camera</uri>
+      <pose>0.1 0 0 0 0 0</pose>
+    </include>
     <joint name="realsense_camera_joint" type="revolute">
       <child>realsense_camera::link</child>
       <parent>iris::base_link</parent>
