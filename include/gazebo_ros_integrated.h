@@ -116,7 +116,7 @@ namespace gazebo
     transport::SubscriberPtr altSub_, magSub_;
     sensor_msgs::msgs::Range alt_msg;
     event::ConnectionPtr updateConnection_;
-    common::Time last_time;
+    common::Time last_time last_flow_time;
     bool isUpdated = false;
   };
 }
