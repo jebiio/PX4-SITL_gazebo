@@ -356,7 +356,7 @@ void IntegratedPlugin::OnUpdate(const common::UpdateInfo &_info)
 
   if (isUpdated == true)
   {
-    int_msg_.delt_sec = (current_time - last_flow_time).Doube();
+    int_msg_.delt_sec = (current_time - last_flow_time).Double();
     int_msg_.delx_rps = int_msg_temp.delx_rps;
     int_msg_.dely_rps = int_msg_temp.dely_rps;
     int_msg_.qual = int_msg_temp.qual;
