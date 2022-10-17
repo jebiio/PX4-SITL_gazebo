@@ -4,6 +4,8 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0054 NEW)
 
+set(ROS_HEADER_INCLUDE_DIRS "/opt/ros/noetic/include")
+
 if (NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "install prefix" FORCE)
 endif()
@@ -195,6 +197,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${OpticalFlow_INCLUDE_DIRS}
   ${TinyXML_INCLUDE_DIRS}
+  ${ROS_HEADER_INCLUDE_DIRS}
   )
 
 if (GSTREAMER_FOUND)
