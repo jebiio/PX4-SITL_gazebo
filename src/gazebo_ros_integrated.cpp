@@ -142,7 +142,7 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
     alt_sub_topic_ = "/gazebo_alt";
   altSub_ = node_handle_->Subscribe(alt_sub_topic_, &IntegratedPlugin::AltCallback, this);
 
-  magSub_ = node_handle_->Subscribe("/gazebo_mag", &IntegratedPlugin::MagCallback, this);
+  magSub_ = node_handle_->Subscribe("/gazebo/default/iris_obs_avoid/mag", &IntegratedPlugin::MagCallback, this);
 
   string topicName = "~/" + scopedName + "/opticalFlow";
   boost::replace_all(topicName, "::", "/");
