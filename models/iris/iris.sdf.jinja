@@ -19,7 +19,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.47 0.47 0.11</size>
+            <size>0.05 0.47 0.11</size>
           </box>
         </geometry>
         <surface>
@@ -471,7 +471,7 @@
           <robotNamespace></robotNamespace>
           <topicName>/gazebo_ros_lidar</topicName>
           <min_distance>0.2</min_distance>
-          <max_distance>15.0</max_distance>
+          <max_distance>35.0</max_distance>
         </plugin>
         <always_on>1</always_on>
         <update_rate>10</update_rate>
@@ -661,7 +661,7 @@
       </axis>
     </joint>
     <link name='alt_link'>
-      <pose>0 0 -0.06 0 0 0</pose>
+      <pose>-0.05 0 0.02 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.01</mass>
@@ -712,7 +712,7 @@
         <plugin name="LaserPlugin" filename="libgazebo_lidar_plugin.so">
           <robotNamespace></robotNamespace>
           <min_distance>0.2</min_distance>
-          <max_distance>15.0</max_distance>
+          <max_distance>35.0</max_distance>
           <topicName>/gazebo_alt</topicName>
           <groundtruth>false</groundtruth>
         </plugin>
