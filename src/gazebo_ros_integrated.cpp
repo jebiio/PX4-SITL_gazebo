@@ -131,9 +131,8 @@ void IntegratedPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
     else
       gyro_sub_topic_ = kDefaultGyroTopic;
 
-    // string topicName = "~/" + _sensor->ParentName() + gyro_sub_topic_;
-    // boost::replace_all(topicName, "::", "/");
-    string topicName = "/gazebo/default/iris_obs_avoid/imu";
+    string topicName = "~/" + _sensor->ParentName() + gyro_sub_topic_;
+    boost::replace_all(topicName, "::", "/");
     imuSub_ = node_handle_->Subscribe(topicName, &IntegratedPlugin::ImuCallback, this);
   }
 
