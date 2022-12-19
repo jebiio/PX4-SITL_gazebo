@@ -640,7 +640,7 @@
       <accelerometerBiasCorrelationTime>300.0</accelerometerBiasCorrelationTime>
       <accelerometerTurnOnBiasSigma>0.196</accelerometerTurnOnBiasSigma>
     </plugin>
-    <plugin name='gazebo_ros_imu' filename='libgazebo_ros_imu.so'>
+    <plugin name='gazebo_ros_imu' filename='libgazebo_ros_imu_kari.so'>
       <robotNamespace/>
       <bodyName>imu_link</bodyName>
       <topicName>/gazebo_ros_imu</topicName>
@@ -725,7 +725,7 @@
       <child>alt_link</child>
       <parent>base_link</parent>
     </joint>
-    <plugin name='gazebo_ros_p3d' filename='libgazebo_ros_p3d.so'>
+    <plugin name='gazebo_ros_p3d' filename='libgazebo_ros_p3d_kari.so'>
       <robotNamespace></robotNamespace>
       <bodyName>base_link</bodyName>
       <topicName>/gazebo_ros_groundtruth</topicName>

@@ -384,7 +384,8 @@ add_library(MultiCameraPlugin_subak SHARED src/MultiCameraPlugin.cpp)
 add_library(RealSensePlugin SHARED src/RealSensePlugin.cpp)
 add_library(gazebo_ros_realsense SHARED src/gazebo_ros_realsense.cpp)
 add_library(gazebo_ros_px4flow SHARED src/gazebo_ros_px4flow.cpp)
-add_library(gazebo_ros_p3d SHARED src/gazebo_ros_p3d.cpp)
+add_library(gazebo_ros_p3d_kari SHARED src/gazebo_ros_p3d.cpp)
+add_library(gazebo_ros_imu_kari SHARED src/gazebo_ros_imu.cpp)
 
 
 
@@ -421,7 +422,8 @@ set(plugins
   RealSensePlugin
   gazebo_ros_realsense
   gazebo_ros_px4flow
-  gazebo_ros_p3d
+  gazebo_ros_p3d_kari
+  gazebo_ros_imu_kari
   )
 
 foreach(plugin ${plugins})
@@ -435,7 +437,8 @@ target_link_libraries(gazebo_ros_multicamera_subak gazebo_ros_camera_utils_subak
 target_link_libraries(RealSensePlugin ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
 target_link_libraries(gazebo_ros_realsense RealSensePlugin ${catkin_LIBRARIES} ${roscpp_LIBRARIES} ${GAZEBO_libraries})
 target_link_libraries(gazebo_ros_px4flow ${OpticalFlow_LIBS})
-target_link_libraries(gazebo_ros_p3d ${OpticalFlow_LIBS})
+target_link_libraries(gazebo_ros_p3d_kari ${OpticalFlow_LIBS})
+target_link_libraries(gazebo_ros_imu_kari ${OpticalFlow_LIBS})
 
 
 
