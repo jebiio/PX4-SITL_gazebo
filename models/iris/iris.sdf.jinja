@@ -19,7 +19,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.05 0.47 0.11</size>
+            <size>0.47 0.47 0.11</size>
           </box>
         </geometry>
         <surface>
@@ -661,7 +661,7 @@
       </axis>
     </joint>
     <link name='alt_link'>
-      <pose>-0.05 0 0.02 0 0 0</pose>
+      <pose>0 0 -0.06 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.01</mass>
@@ -714,7 +714,7 @@
           <min_distance>0.2</min_distance>
           <max_distance>35.0</max_distance>
           <topicName>/gazebo_alt</topicName>
-          <groundtruth>true</groundtruth>
+          <groundtruth>false</groundtruth>
         </plugin>
         <always_on>1</always_on>
         <update_rate>100</update_rate>
