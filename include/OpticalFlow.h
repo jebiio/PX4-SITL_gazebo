@@ -6,7 +6,7 @@
 
 #include <string>
 #include <vector>
-#include <map>
+#include <memory>
 
 #include <ros/types.h>
 #include <ros/serialization.h>
@@ -23,11 +23,11 @@ namespace kari_core
     typedef OpticalFlow_<ContainerAllocator> Type;
 
     OpticalFlow_()
-        : header(), ground_distance(0.0), flow_x(0), flow_y(0), velocity_x(0.0), velocity_y(0.0), quality(0)
+        : header(), ground_distance(0.0), flow_x(0.0), flow_y(0.0), velocity_x(0.0), velocity_y(0.0), quality(0)
     {
     }
     OpticalFlow_(const ContainerAllocator &_alloc)
-        : header(_alloc), ground_distance(0.0), flow_x(0), flow_y(0), velocity_x(0.0), velocity_y(0.0), quality(0)
+        : header(_alloc), ground_distance(0.0), flow_x(0.0), flow_y(0.0), velocity_x(0.0), velocity_y(0.0), quality(0)
     {
       (void)_alloc;
     }
@@ -38,10 +38,10 @@ namespace kari_core
     typedef float _ground_distance_type;
     _ground_distance_type ground_distance;
 
-    typedef int16_t _flow_x_type;
+    typedef float _flow_x_type;
     _flow_x_type flow_x;
 
-    typedef int16_t _flow_y_type;
+    typedef float _flow_y_type;
     _flow_y_type flow_y;
 
     typedef float _velocity_x_type;
@@ -138,12 +138,12 @@ namespace ros
     {
       static const char *value()
       {
-        return "6705fe0e94fea14978a508d00cf97427";
+        return "7948aa66a95c17de58bdf6bc6fbae44a";
       }
 
       static const char *value(const ::kari_core::OpticalFlow_<ContainerAllocator> &) { return value(); }
-      static const uint64_t static_value1 = 0x6705fe0e94fea149ULL;
-      static const uint64_t static_value2 = 0x78a508d00cf97427ULL;
+      static const uint64_t static_value1 = 0x7948aa66a95c17deULL;
+      static const uint64_t static_value2 = 0x58bdf6bc6fbae44aULL;
     };
 
     template <class ContainerAllocator>
@@ -165,8 +165,8 @@ namespace ros
         return "Header header\n"
                "\n"
                "float32 ground_distance  # distance to ground in meters\n"
-               "int16   flow_x           # x-component of optical flow in pixels\n"
-               "int16   flow_y           # y-component of optical flow in pixels\n"
+               "float32 flow_x           # x-component of optical flow in pixels\n"
+               "float32 flow_y           # y-component of optical flow in pixels\n"
                "float32 velocity_x       # x-component of scaled optical flow in m/s\n"
                "float32 velocity_y       # y-component of scaled optical flow in m/s\n"
                "uint8   quality          # quality of optical flow estimate\n"
@@ -237,9 +237,9 @@ namespace ros
         s << indent << "ground_distance: ";
         Printer<float>::stream(s, indent + "  ", v.ground_distance);
         s << indent << "flow_x: ";
-        Printer<int16_t>::stream(s, indent + "  ", v.flow_x);
+        Printer<float>::stream(s, indent + "  ", v.flow_x);
         s << indent << "flow_y: ";
-        Printer<int16_t>::stream(s, indent + "  ", v.flow_y);
+        Printer<float>::stream(s, indent + "  ", v.flow_y);
         s << indent << "velocity_x: ";
         Printer<float>::stream(s, indent + "  ", v.velocity_x);
         s << indent << "velocity_y: ";
