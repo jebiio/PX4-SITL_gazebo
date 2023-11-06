@@ -200,7 +200,7 @@ void Px4FlowPlugin::OnNewFrame(const unsigned char *_image,
     opticalFlow_message.set_integrated_y(quality ? flow_y_ang : 0.0f);
 
     px4flow_msg_.header.stamp.sec = (int)floor(now.Double());
-    px4flow_msg_.header.stamp.nsec = (int)(now.Double() - floor(now.Double()) * 1e9);
+    px4flow_msg_.header.stamp.nsec = (int)((now.Double()-floor(now.Double()))*1e9);
     px4flow_msg_.flow_x = quality ? flow_x_ang : 0.0f;
     px4flow_msg_.flow_y = quality ? flow_y_ang : 0.0f;
 
